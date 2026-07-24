@@ -33,6 +33,8 @@ class PlaceConstraint {
     required this.title,
     this.address = '',
     this.contentType = '',
+    this.contentTypeId = '',
+    this.areaCode = '',
     this.lat,
     this.lng,
     this.tel = '',
@@ -68,6 +70,8 @@ class PlaceConstraint {
   final String title;
   final String address;
   final String contentType;
+  final String contentTypeId;
+  final String areaCode;
   final double? lat;
   final double? lng;
   final String tel;
@@ -128,6 +132,8 @@ class PlaceConstraint {
         title: j['title'] as String? ?? '',
         address: j['address'] as String? ?? '',
         contentType: j['content_type'] as String? ?? '',
+        contentTypeId: j['content_type_id'] as String? ?? '',
+        areaCode: j['area_code'] as String? ?? '',
         lat: (j['lat'] as num?)?.toDouble(),
         lng: (j['lng'] as num?)?.toDouble(),
         tel: j['tel'] as String? ?? '',

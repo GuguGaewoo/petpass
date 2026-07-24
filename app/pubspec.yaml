@@ -1,6 +1,6 @@
 name: petpass
 description: "반려동물 동반여행 사전확인 플랫폼"
-publish_to: "none"
+publish_to: 'none'
 version: 0.1.0
 
 environment:
@@ -11,9 +11,10 @@ dependencies:
     sdk: flutter
 
 dev_dependencies:
-  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/places.json
