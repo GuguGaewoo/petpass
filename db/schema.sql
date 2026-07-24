@@ -67,8 +67,11 @@ create table if not exists reports (
 create index if not exists reports_content_idx on reports (content_id);
 
 -- 같은 기기가 같은 장소에 하루 한 번만
+-- created_at::date 는 서버 타임존에 따라 값이 달라져 인덱스에 쓸 수 없다
+-- (IMMUTABLE 이 아님). 타임존을 명시하면 IMMUTABLE 이 되어 사용 가능하다.
 create unique index if not exists reports_once_per_day
-  on reports (content_id, device_hash, (created_at::date));
+  on reports (content_id, device_hash,
+              ((created_at at time zone 'Asia/Seoul')::date));
 
 -- ────────────────────────────────────────────────
 -- RLS — 반드시 켤 것

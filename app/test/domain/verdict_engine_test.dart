@@ -10,7 +10,7 @@ import 'package:petpass/domain/models/pet_profile.dart';
 import 'package:petpass/domain/models/place_constraint.dart';
 import 'package:petpass/domain/models/verdict.dart';
 import 'package:petpass/domain/verdict_engine.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 const engine = VerdictEngine();
 
