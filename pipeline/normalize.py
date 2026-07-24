@@ -3,14 +3,11 @@
 """
 정규화 — TourAPI 자연어 조건문을 구조화 스키마로 변환.
 
-서비스의 핵심 차별점이 여기 있습니다. 기능설명서의 #조건_해석 항목이
-가리키는 코드입니다.
-
-스키마 정의는 docs/schema.md 가 기준입니다. 이 파일과 app/lib/domain/ 의
-Dart 모델이 같은 스키마를 봐야 하므로, 필드를 바꿀 때는 문서를 먼저 고치세요.
+서비스의 핵심 차별점. 기능설명서 #조건_해석 항목이 가리키는 코드다.
+스키마 정의는 docs/schema.md 가 기준이며, Dart 판정 엔진과 반드시 일치해야 한다.
 
 실행:
-    python normalize.py          # data/pet_normalized.json 생성
+    python normalize.py
 """
 
 import json
@@ -23,9 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rules import patterns as P
 from tourapi import NORMALIZED_FILE, cid_of, merged_records, save_json
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
-# 조건 문구가 들어 있을 수 있는 상세 필드 전체
 CONDITION_FIELDS = [
     "acmpyTypeCd", "acmpyPsblCpam", "acmpyNeedMtr", "relaAcdntRiskMtr",
     "relaPosesFclty", "relaFrnshPrdlst", "relaRntlPrdlst", "relaPurcPrdlst",
@@ -38,13 +34,7 @@ CONTENT_TYPE = {
 }
 
 
-def _blob(rec):
-    """조건 관련 필드를 하나의 문자열로 합침"""
-    return " ".join(str(rec.get(f) or "") for f in CONDITION_FIELDS)
-
-
 def _iso(yyyymmddhhmmss):
-    """TourAPI 의 20241218152408 형식을 ISO 로"""
     s = str(yyyymmddhhmmss or "").strip()
     if len(s) < 8:
         return None
@@ -56,37 +46,62 @@ def _iso(yyyymmddhhmmss):
 
 def normalize(rec):
     """병합된 원본 레코드 1건 → 구조화 스키마 1건"""
-    blob = _blob(rec)
     acmpy_raw = (rec.get("acmpyTypeCd") or "").strip()
-    cpam_raw = (rec.get("acmpyPsblCpam") or "").strip()
-    need_raw = (rec.get("acmpyNeedMtr") or "").strip()
+    cpam = (rec.get("acmpyPsblCpam") or "").strip()
+    need = (rec.get("acmpyNeedMtr") or "").strip()
+    etc = (rec.get("etcAcmpyInfo") or "").strip()
 
-    has_detail = bool(acmpy_raw or cpam_raw or need_raw)
+    has_detail = bool(acmpy_raw or cpam or need)
 
-    # ── 동반 유형 ──
+    # ── 동반 유형 (판정 1차) ──
     acmpy_type = P.ACMPY_TYPE_MAP.get(acmpy_raw)
     if acmpy_type is None and acmpy_raw:
-        acmpy_type = "unknown_value"      # 매핑에 없는 새 값 → patterns.py 보강 필요
+        acmpy_type = "unknown_value"
 
-    # ── 안내견 전용 여부 (핵심) ──
-    # acmpyTypeCd 가 "동반가능" 이어도 여기가 True 면 일반 반려견은 불가.
-    guide_dog_only = P.find_any(cpam_raw, P.GUIDE_DOG_ONLY)
+    # ── 안내견 전용 (판정 2차, 최우선 제약) ──
+    guide_dog_only = P.find_any(cpam, P.GUIDE_DOG_ONLY)
 
-    # ── 체중 / 크기 ──
-    max_weight = P.extract_max_weight(cpam_raw) or P.extract_max_weight(blob)
-    size = P.extract_size(cpam_raw) or P.extract_size(blob)
+    # ── 명시적 불가 / 문의 필요 ──
+    explicitly_denied = cpam in P.NOT_ALLOWED
+    needs_inquiry = P.find_any(cpam, P.ASK_PHONE)
+
+    # ── 체중: acmpyPsblCpam 만 확정값으로 인정 ──
+    # etcAcmpyInfo 의 체중은 구역별 예외가 섞여 있어 단일 상한으로 쓰면 오판정
+    # (예: "산림욕장은 전견종 가능하나 캠핑장은 15Kg이상 불가")
+    max_weight = P.extract_max_weight(cpam)
+    weight_source = "acmpyPsblCpam" if max_weight is not None else None
+    weight_in_etc = max_weight is None and P.extract_max_weight(etc) is not None
+
+    muzzle_over_kg = P.extract_muzzle_threshold(cpam) or P.extract_muzzle_threshold(etc)
+    max_count = P.extract_max_count(cpam) or P.extract_max_count(etc)
+
+    # ── 견종 ──
+    all_breed = P.find_any(cpam, P.ALL_BREED)
+    size_limit = None if all_breed else P.extract_size(cpam)
+    fierce_excluded = P.find_any(cpam, P.FIERCE_EXCLUDED) or P.find_any(etc, P.FIERCE_EXCLUDED)
 
     # ── 준비물 ──
-    required = P.extract_required_items(need_raw)
-    for extra in P.extract_required_items(blob):
-        if extra not in required:
-            required.append(extra)
+    items, free_use, see_etc = P.extract_need_items(need)
+    if P.find_any(cpam, P.KENNEL_IN_CPAM) and "이동장" not in items:
+        items.append("이동장")     # 가능동물 문구에만 이동장 조건이 있는 경우
+    vaccine_required = P.find_any(cpam, P.VACCINE) or P.find_any(etc, P.VACCINE)
+    if vaccine_required and "예방접종 증명" not in items:
+        items.append("예방접종 증명")
+
+    # ── 구역 제한 ──
+    # 일부구역인데 어느 구역인지는 자연어로만 있음 → 원문 확인 유도 플래그
+    zone_detail_in_text = acmpy_type == "partial_area" and bool(etc)
 
     # ── 신뢰도 ──
-    # 구조화에 성공한 신호가 많을수록 높음. UI 에서 "정보없음" 판단에 사용.
-    signals = [bool(acmpy_type), bool(cpam_raw), bool(need_raw),
-               max_weight is not None, size is not None]
+    signals = [
+        bool(acmpy_type and acmpy_type != "unknown_value"),
+        bool(cpam),
+        bool(need),
+        all_breed or max_weight is not None or size_limit is not None,
+    ]
     confidence = round(sum(1 for s in signals if s) / len(signals), 2)
+    if weight_in_etc or see_etc:
+        confidence = round(max(confidence - 0.25, 0.0), 2)
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -108,18 +123,28 @@ def normalize(rec):
         "has_detail": has_detail,
         "acmpy_type": acmpy_type,
         "guide_dog_only": guide_dog_only,
+        "explicitly_denied": explicitly_denied,
+        "needs_inquiry": needs_inquiry,
+        "all_breed_ok": all_breed,
         "max_weight_kg": max_weight,
-        "size_restriction": size,
-        "breed_restricted": P.find_any(blob, P.BREED_RESTRICTED),
-        "required_items": required,
+        "weight_source": weight_source,
+        "weight_in_etc_only": weight_in_etc,
+        "size_limit": size_limit,
+        "fierce_excluded": fierce_excluded,
+        "muzzle_over_kg": muzzle_over_kg,
+        "max_count": max_count,
+        "required_items": items,
+        "free_use": free_use,
+        "see_etc_info": see_etc,
+        "zone_detail_in_text": zone_detail_in_text,
         "provided_items": P.split_items(rec.get("relaFrnshPrdlst")),
         "rental_items": P.split_items(rec.get("relaRntlPrdlst")),
         "purchasable_items": P.split_items(rec.get("relaPurcPrdlst")),
         "facilities": P.split_items(rec.get("relaPosesFclty")),
-        "extra_fee": P.find_any(blob, P.EXTRA_FEE),
-        "outdoor_only": P.find_any(blob, P.OUTDOOR_ONLY),
+        "extra_fee": P.find_any(etc, P.EXTRA_FEE),
+        "outdoor_only": P.find_any(etc, P.OUTDOOR_ONLY),
         "risk_notes": (rec.get("relaAcdntRiskMtr") or "").strip(),
-        "etc_info": (rec.get("etcAcmpyInfo") or "").strip(),
+        "etc_info": etc,
 
         # 근거 및 추적 (판정 화면에 반드시 함께 노출)
         "source_text": {f: (rec.get(f) or "") for f in CONDITION_FIELDS},
@@ -132,26 +157,43 @@ def normalize(rec):
 def main():
     records = merged_records()
     if not records:
-        print("수집 데이터가 없습니다. python sync.py 를 먼저 실행하세요.")
+        print("수집 데이터가 없습니다. python sync.py collect 를 먼저 실행하세요.")
         return
 
     out = [normalize(r) for r in records]
     save_json(NORMALIZED_FILE, out)
+    n = len(out)
 
-    with_detail = sum(1 for r in out if r["has_detail"])
-    guide = sum(1 for r in out if r["guide_dog_only"])
-    trap = sum(1 for r in out
-               if r["guide_dog_only"] and r["acmpy_type"] in ("all_area", "partial_area"))
-    weight = sum(1 for r in out if r["max_weight_kg"] is not None)
-    unknown = sorted({r["acmpy_type"] for r in out if r["acmpy_type"] == "unknown_value"})
+    def cnt(fn):
+        return sum(1 for r in out if fn(r))
 
-    print(f"정규화 {len(out)}건 → {os.path.basename(NORMALIZED_FILE)}")
-    print(f"  상세정보 있음        {with_detail:>5}건 ({with_detail/len(out)*100:.1f}%)")
-    print(f"  안내견 전용          {guide:>5}건")
-    print(f"   └ 유형은 '동반가능'  {trap:>5}건  ← 오인 위험. 서비스 핵심 사례")
-    print(f"  체중 상한 추출 성공  {weight:>5}건")
+    trap = cnt(lambda r: r["guide_dog_only"] and r["acmpy_type"] in ("all_area", "partial_area"))
+    unknown = sorted({r["source_text"]["acmpyTypeCd"] for r in out
+                      if r["acmpy_type"] == "unknown_value"})
+
+    print(f"정규화 {n}건 → {os.path.basename(NORMALIZED_FILE)}\n")
+    print("── 판정 가능성 ──")
+    print(f"  상세정보 있음          {cnt(lambda r: r['has_detail']):>4}건")
+    print(f"  전 견종 허용           {cnt(lambda r: r['all_breed_ok']):>4}건")
+    print(f"  체중 상한 확정         {cnt(lambda r: r['max_weight_kg'] is not None):>4}건")
+    print(f"  견종 크기 제한         {cnt(lambda r: r['size_limit']):>4}건")
+    print(f"  준비물 추출            {cnt(lambda r: r['required_items']):>4}건")
+
+    print("\n── 주의가 필요한 케이스 ──")
+    print(f"  안내견 전용            {cnt(lambda r: r['guide_dog_only']):>4}건")
+    print(f"   └ 유형은 '동반가능'    {trap:>4}건  ← 오인 위험")
+    print(f"  일부구역(원문 확인)    {cnt(lambda r: r['zone_detail_in_text']):>4}건  ← 최다 헛걸음 요인")
+    print(f"  체중이 기타정보에만    {cnt(lambda r: r['weight_in_etc_only']):>4}건")
+    print(f"  전화문의 필요          {cnt(lambda r: r['needs_inquiry']):>4}건")
+    print(f"  명시적 불가            {cnt(lambda r: r['explicitly_denied']):>4}건")
+
+    avg = sum(r["confidence"] for r in out) / n
+    print(f"\n  평균 신뢰도            {avg:.2f}")
+
     if unknown:
-        print("\n⚠ ACMPY_TYPE_MAP 에 없는 값이 있습니다. rules/patterns.py 를 보강하세요.")
+        print("\n⚠ ACMPY_TYPE_MAP 에 없는 값:")
+        for v in unknown:
+            print(f"    {v!r}")
 
 
 if __name__ == "__main__":

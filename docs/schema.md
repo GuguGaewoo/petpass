@@ -27,47 +27,47 @@
 
 ### 장소 기본 정보
 
-| 필드 | 타입 | 설명 |
-|---|---|---|
-| `content_id` | string | TourAPI contentid. 기본키 |
-| `title` | string | 장소명 |
-| `address` | string | addr1 + addr2 |
-| `content_type` | string | 관광지/문화시설/레포츠/숙박/쇼핑/음식점/기타 |
-| `content_type_id` | string | TourAPI contenttypeid 원값 |
-| `area_code` | string | 시도 코드 |
-| `sigungu_code` | string | 시군구 코드 |
-| `lat` / `lng` | float? | 위도(mapy) / 경도(mapx) |
-| `tel` | string | 전화번호 |
-| `image` | string | 대표 이미지 URL |
+| 필드              | 타입   | 설명                                         |
+| ----------------- | ------ | -------------------------------------------- |
+| `content_id`      | string | TourAPI contentid. 기본키                    |
+| `title`           | string | 장소명                                       |
+| `address`         | string | addr1 + addr2                                |
+| `content_type`    | string | 관광지/문화시설/레포츠/숙박/쇼핑/음식점/기타 |
+| `content_type_id` | string | TourAPI contenttypeid 원값                   |
+| `area_code`       | string | 시도 코드                                    |
+| `sigungu_code`    | string | 시군구 코드                                  |
+| `lat` / `lng`     | float? | 위도(mapy) / 경도(mapx)                      |
+| `tel`             | string | 전화번호                                     |
+| `image`           | string | 대표 이미지 URL                              |
 
 ### 구조화된 제약 조건
 
-| 필드 | 타입 | 값 | 설명 |
-|---|---|---|---|
-| `has_detail` | bool | | 상세 조건 데이터가 하나라도 있는가 |
-| `acmpy_type` | string? | `all_area` `partial_area` `not_allowed` `unknown_value` `null` | 동반 유형. **판정 1차 기준** |
-| `guide_dog_only` | bool | | **판정 2차 기준. 아래 주의 참고** |
-| `max_weight_kg` | float? | | 체중 상한. "10kg 이하" 형태만 인정 |
-| `size_restriction` | string? | `small` `medium` `large` `null` | 견종 크기 제한 |
-| `breed_restricted` | bool | | 맹견 등 견종 제한 문구 존재 |
-| `required_items` | string[] | | 준비물 체크리스트 |
-| `provided_items` | string[] | | 비치 품목 (준비물에서 차감 가능) |
-| `rental_items` | string[] | | 대여 품목 |
-| `purchasable_items` | string[] | | 구매 가능 품목 |
-| `facilities` | string[] | | 보유 시설 |
-| `extra_fee` | bool | | 추가 요금 언급 |
-| `outdoor_only` | bool | | 야외/테라스 한정 |
-| `risk_notes` | string | | 사고 대비사항 원문 |
-| `etc_info` | string | | 기타 동반 정보 원문 |
+| 필드                | 타입     | 값                                                             | 설명                               |
+| ------------------- | -------- | -------------------------------------------------------------- | ---------------------------------- |
+| `has_detail`        | bool     |                                                                | 상세 조건 데이터가 하나라도 있는가 |
+| `acmpy_type`        | string?  | `all_area` `partial_area` `not_allowed` `unknown_value` `null` | 동반 유형. **판정 1차 기준**       |
+| `guide_dog_only`    | bool     |                                                                | **판정 2차 기준. 아래 주의 참고**  |
+| `max_weight_kg`     | float?   |                                                                | 체중 상한. "10kg 이하" 형태만 인정 |
+| `size_restriction`  | string?  | `small` `medium` `large` `null`                                | 견종 크기 제한                     |
+| `breed_restricted`  | bool     |                                                                | 맹견 등 견종 제한 문구 존재        |
+| `required_items`    | string[] |                                                                | 준비물 체크리스트                  |
+| `provided_items`    | string[] |                                                                | 비치 품목 (준비물에서 차감 가능)   |
+| `rental_items`      | string[] |                                                                | 대여 품목                          |
+| `purchasable_items` | string[] |                                                                | 구매 가능 품목                     |
+| `facilities`        | string[] |                                                                | 보유 시설                          |
+| `extra_fee`         | bool     |                                                                | 추가 요금 언급                     |
+| `outdoor_only`      | bool     |                                                                | 야외/테라스 한정                   |
+| `risk_notes`        | string   |                                                                | 사고 대비사항 원문                 |
+| `etc_info`          | string   |                                                                | 기타 동반 정보 원문                |
 
 ### 근거 및 추적
 
-| 필드 | 타입 | 설명 |
-|---|---|---|
-| `source_text` | object | 상세 필드 9종의 원문 전체. **판정 화면에 노출 필수** |
-| `last_modified` | ISO8601? | TourAPI modifiedtime. **판정 화면에 노출 필수** |
-| `collected_at` | ISO8601 | 배치 수집 시각 |
-| `confidence` | float | 0.0~1.0. 구조화 성공 신호 비율 |
+| 필드            | 타입     | 설명                                                 |
+| --------------- | -------- | ---------------------------------------------------- |
+| `source_text`   | object   | 상세 필드 9종의 원문 전체. **판정 화면에 노출 필수** |
+| `last_modified` | ISO8601? | TourAPI modifiedtime. **판정 화면에 노출 필수**      |
+| `collected_at`  | ISO8601  | 배치 수집 시각                                       |
+| `confidence`    | float    | 0.0~1.0. 구조화 성공 신호 비율                       |
 
 ---
 
@@ -116,6 +116,6 @@ otherwise                                → 가능
 
 ## 변경 이력
 
-| 버전 | 날짜 | 내용 |
-|---|---|---|
-| 1 | 초안 | 실제 필드명 확인 후 최초 작성. profile 결과 반영 전 |
+| 버전 | 날짜 | 내용                                                |
+| ---- | ---- | --------------------------------------------------- |
+| 1    | 초안 | 실제 필드명 확인 후 최초 작성. profile 결과 반영 전 |
