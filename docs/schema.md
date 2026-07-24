@@ -7,8 +7,8 @@
 > 맞춥니다. **스키마를 바꿀 때는 이 문서를 먼저 고치고, 그다음 양쪽 코드를
 > 고칩니다.**
 
-현재 버전: `schema_version = 1`
-상태: **초안** — `tour_probe.py profile` 결과 반영 후 확정 예정
+현재 버전: `schema_version = 2`
+상태: **확정** — 전국 632건 실사 반영 (2026-07)
 
 ---
 
@@ -91,24 +91,66 @@ acmpyPsblCpam : "시각 장애인 안내견"
 
 ---
 
-## 판정 규칙 (Dart 측 구현 기준)
+## 판정 규칙 v2
 
-입력: `PetProfile { weight_kg, size, is_guide_dog }` + 위 스키마
-출력: `가능 / 조건부 가능 / 불가 / 정보없음`
+구현: `app/lib/domain/verdict_engine.dart` (순수 Dart, 테스트 22건)
+검증: `pipeline/verdict_preview.py` 로 632건 전체 분포 확인
+
+뱃지가 답하는 질문은 하나다: **"데려가면 들어갈 수 있나?"**
+
+| 등급        | 의미                             |
+| ----------- | -------------------------------- |
+| 불가        | 데려가면 거부당함                |
+| 조건부 가능 | 준비물이 없으면 거부당할 수 있음 |
+| 가능        | 그냥 가면 됨                     |
+| 정보없음    | 판단 근거 부족                   |
 
 ```
-if not has_detail                        → 정보없음
-if acmpy_type == not_allowed             → 불가
-if guide_dog_only and not is_guide_dog   → 불가
-if max_weight_kg != null:
-    if pet.weight_kg > max_weight_kg     → 불가
-if size_restriction != null:
-    if pet.size 가 허용 범위 밖           → 불가
-if acmpy_type == partial_area            → 조건부 가능
-if outdoor_only or extra_fee             → 조건부 가능
-if required_items 가 비어있지 않음        → 조건부 가능 (준비물 안내)
-otherwise                                → 가능
+if not has_detail                          → 정보없음
+
+# 법률 우선: 장애인복지법상 보조견 출입 거부는 금지
+if pet.is_guide_dog                        → 가능 (이하 제약 전부 건너뜀)
+
+if explicitly_denied                       → 불가
+if guide_dog_only                          → 불가   ← 핵심 교차검증
+if needs_inquiry                           → 정보없음
+
+if max_weight_kg and pet.weight > 상한      → 불가
+if size_limit and pet.size > 상한           → 불가
+if fierce_excluded and pet.is_fierce       → 불가
+
+extra = required_items - BASELINE_ITEMS
+if extra                                   → 조건부 가능
+if weight_in_etc_only or see_etc_info      → 조건부 가능
+if acmpy_type is null or unknown_value     → 정보없음
+
+if acmpy_type == partial_area              → 가능 (사유: 이용 구역 제한)
+otherwise                                  → 가능
 ```
+
+`BASELINE_ITEMS = {목줄}` — 동물보호법상 외출 시 안전조치는 이미 의무이며
+장소 고유의 제약이 아니다. 실측 632건 중 414건(65.5%)이 목줄만 요구하므로,
+이를 조건으로 세면 대부분이 '조건부 가능'이 되어 뱃지가 변별력을 잃는다.
+입마개는 맹견 한정 의무이므로 제외하지 않는다.
+
+**일부구역은 등급을 낮추지 않는다.** 입장 거부가 아니라 이용 범위 제한이다.
+대신 `구역 제한` 칩과 `zoneNote`(etcAcmpyInfo 원문)로 전달한다.
+
+### 칩 — 등급과 별개로 카드에 표시
+
+`구역 제한` `N kg 이하` `소형견까지` `맹견 제외` `최대 N마리`
+`N kg↑ 입마개` `추가 요금` `야외만`
+
+### 실측 분포 (632건)
+
+| 프로필            | 가능  | 조건부 | 불가  | 정보없음 |
+| ----------------- | ----- | ------ | ----- | -------- |
+| 말티즈 4kg        | 68.2% | 23.9%  | 4.4%  | 3.5%     |
+| 코커스패니얼 12kg | 61.7% | 19.1%  | 16.1% | 3.0%     |
+| 리트리버 30kg     | 61.1% | 16.9%  | 19.1% | 2.8%     |
+
+불가가 프로필에 따라 28건 ↔ 121건으로 4.3배 벌어진다. 대조 판정이
+실제로 결과를 가르고 있다는 근거다.
 
 모든 결과에 `source_text` 와 `last_modified` 를 함께 반환한다.
 
@@ -116,6 +158,16 @@ otherwise                                → 가능
 
 ## 변경 이력
 
-| 버전 | 날짜 | 내용                                                |
-| ---- | ---- | --------------------------------------------------- |
-| 1    | 초안 | 실제 필드명 확인 후 최초 작성. profile 결과 반영 전 |
+| 버전 | 날짜    | 내용                                                   |
+| ---- | ------- | ------------------------------------------------------ |
+| 1    | 초안    | 실제 필드명 확인 후 최초 작성                          |
+| 2    | 2026-07 | 전국 632건 실사 반영. 파싱 규칙 확정, 판정 규칙 재정의 |
+
+### v1 → v2 주요 변경
+
+- `acmpy_type` 에서 `not_allowed` 제거 — API 에 해당 값이 존재하지 않음
+- 목줄을 `BASELINE_ITEMS` 로 분리하여 등급 산정에서 제외
+- 일부구역을 조건부에서 가능으로 이동, 칩으로 표시
+- 체중 출처를 `acmpyPsblCpam` 으로 한정, `weight_in_etc_only` 플래그 신설
+- `muzzle_over_kg` 신설 — 'N kg 이상 입마개'를 체중 상한으로 오인하던 문제
+- 보조견 법률 예외를 판정 최상단에 배치

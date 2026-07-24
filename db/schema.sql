@@ -107,3 +107,30 @@ select
   max(created_at)                       as last_reported_at
 from reports
 group by content_id;
+
+-- ────────────────────────────────────────────────
+-- Data API 접근 권한
+-- ────────────────────────────────────────────────
+-- 프로젝트 생성 시 "Automatically expose new tables" 를 껐다면 필수다.
+-- 권한을 준 테이블만 API 로 노출되며, 실제 접근 범위는 위의 RLS 정책이 정한다.
+-- (권한 = 문을 여는 것, RLS = 문 안에서 무엇을 할 수 있는지)
+
+grant usage on schema public to anon, authenticated;
+
+-- places : 읽기만. 쓰기는 service_role(배치)만 가능
+grant select on places to anon, authenticated;
+
+-- reports : 삽입과 조회만. 수정·삭제 권한은 주지 않는다
+grant select, insert on reports to anon, authenticated;
+grant usage, select on sequence reports_id_seq to anon, authenticated;
+
+-- 집계 뷰
+grant select on place_report_summary to anon, authenticated;
+
+-- ────────────────────────────────────────────────
+-- 확인
+-- ────────────────────────────────────────────────
+-- 아래 쿼리로 RLS 가 켜져 있는지 검증할 것. rowsecurity 가 전부 true 여야 한다.
+--
+--   select tablename, rowsecurity from pg_tables
+--   where schemaname = 'public' and tablename in ('places', 'reports');
