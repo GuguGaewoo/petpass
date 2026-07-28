@@ -47,13 +47,16 @@ class _PetPassAppState extends State<PetPassApp> {
               body: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
-                  child: Text(_state.error!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          fontFamilyFallback: T.kr,
-                          fontSize: 14,
-                          color: T.stop,
-                          height: 1.6)),
+                  child: Text(
+                    _state.error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: 14,
+                      color: T.stop,
+                      height: 1.6,
+                    ),
+                  ),
                 ),
               ),
             );

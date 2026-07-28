@@ -49,16 +49,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DogSize get _size => _sizeOverride ?? DogSize.fromWeight(_weight);
 
   void _submit() {
-    widget.state.setPet(PetProfile(
-      name: _name.text.trim().isEmpty ? '우리 아이' : _name.text.trim(),
-      weightKg: _weight,
-      size: _size,
-      isFierce: _fierce,
-      isGuideDog: _guideDog,
-    ));
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => SearchScreen(state: widget.state),
-    ));
+    widget.state.setPet(
+      PetProfile(
+        name: _name.text.trim().isEmpty ? '우리 아이' : _name.text.trim(),
+        weightKg: _weight,
+        size: _size,
+        isFierce: _fierce,
+        isGuideDog: _guideDog,
+      ),
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => SearchScreen(state: widget.state)),
+    );
   }
 
   @override
@@ -72,32 +74,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
               children: [
-                const Text('펫패스',
-                    style: TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -1,
-                        color: T.ink)),
+                const Text(
+                  '펫패스',
+                  style: TextStyle(
+                    fontFamilyFallback: T.kr,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
+                    color: T.ink,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                const Text('반려동물과 갈 수 있는 곳인지 미리 확인하세요',
-                    style: TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 14.5,
-                        color: T.inkSoft,
-                        height: 1.5)),
+                const Text(
+                  '반려동물과 갈 수 있는 곳인지 미리 확인하세요',
+                  style: TextStyle(
+                    fontFamilyFallback: T.kr,
+                    fontSize: 14.5,
+                    color: T.inkSoft,
+                    height: 1.5,
+                  ),
+                ),
                 const SizedBox(height: 36),
 
                 _label('이름'),
                 TextField(
                   controller: _name,
-                  style: const TextStyle(fontFamilyFallback: T.kr, fontSize: 16),
+                  style: const TextStyle(
+                    fontFamilyFallback: T.kr,
+                    fontSize: 16,
+                  ),
                   decoration: InputDecoration(
                     hintText: '우리 아이',
                     filled: true,
                     fillColor: T.card,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(T.r),
                       borderSide: const BorderSide(color: T.line),
@@ -115,24 +128,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(_weight.toStringAsFixed(1),
-                        style: T.mono.copyWith(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: T.ink,
-                            height: 1)),
+                    Text(
+                      _weight.toStringAsFixed(1),
+                      style: T.mono.copyWith(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w700,
+                        color: T.ink,
+                        height: 1,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    const Text('kg',
-                        style: TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 16,
-                            color: T.inkSoft)),
+                    const Text(
+                      'kg',
+                      style: TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 16,
+                        color: T.inkSoft,
+                      ),
+                    ),
                     const Spacer(),
-                    Text(_size.label,
-                        style: const TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 14,
-                            color: T.inkSoft)),
+                    Text(
+                      _size.label,
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 14,
+                        color: T.inkSoft,
+                      ),
+                    ),
                   ],
                 ),
                 Slider(
@@ -172,13 +194,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: FilledButton.styleFrom(
                       backgroundColor: T.ink,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(T.r)),
+                        borderRadius: BorderRadius.circular(T.r),
+                      ),
                     ),
-                    child: const Text('장소 찾아보기',
-                        style: TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700)),
+                    child: const Text(
+                      '장소 찾아보기',
+                      style: TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -186,7 +212,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   '입력한 정보는 이 기기에만 저장되며 어디에도 전송하지 않습니다.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontFamilyFallback: T.kr, fontSize: 12, color: T.inkSoft),
+                    fontFamilyFallback: T.kr,
+                    fontSize: 12,
+                    color: T.inkSoft,
+                  ),
                 ),
               ],
             ),
@@ -200,46 +229,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _weightRuler() {
     return Padding(
       padding: const EdgeInsets.only(left: 12, right: 12),
-      child: LayoutBuilder(builder: (context, c) {
-        const min = 0.5, max = 45.0;
-        final x = (10 - min) / (max - min) * c.maxWidth;
-        return SizedBox(
-          height: 26,
-          child: Stack(children: [
-            Positioned(
-              left: x - 40,
-              width: 80,
-              child: Column(children: [
-                Container(width: 1, height: 6, color: T.inkSoft),
-                const SizedBox(height: 3),
-                const Text('10kg',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontFamilyFallback: T.monoStack,
-                        fontSize: 10.5,
-                        color: T.inkSoft)),
-                const Text('제한이 몰리는 기준',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontFamilyFallback: T.kr, fontSize: 9.5, color: T.mute)),
-              ]),
+      child: LayoutBuilder(
+        builder: (context, c) {
+          const min = 0.5, max = 45.0;
+          final x = (10 - min) / (max - min) * c.maxWidth;
+          return SizedBox(
+            height: 26,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: x - 40,
+                  width: 80,
+                  child: Column(
+                    children: [
+                      Container(width: 1, height: 6, color: T.inkSoft),
+                      const SizedBox(height: 3),
+                      const Text(
+                        '10kg',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamilyFallback: T.monoStack,
+                          fontSize: 10.5,
+                          color: T.inkSoft,
+                        ),
+                      ),
+                      const Text(
+                        '제한이 몰리는 기준',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamilyFallback: T.kr,
+                          fontSize: 9.5,
+                          color: T.mute,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ]),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 
   Widget _label(String s) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(s,
-            style: const TextStyle(
-                fontFamilyFallback: T.kr,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: T.inkSoft,
-                letterSpacing: 0.3)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      s,
+      style: const TextStyle(
+        fontFamilyFallback: T.kr,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: T.inkSoft,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
 
   Widget _check({
     required bool value,
@@ -252,32 +298,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
       borderRadius: BorderRadius.circular(T.r),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Checkbox(
-            value: value,
-            onChanged: (v) => onChanged(v ?? false),
-            activeColor: T.ink,
-            visualDensity: VisualDensity.compact,
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 9),
-                child: Text(title,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Checkbox(
+              value: value,
+              onChanged: (v) => onChanged(v ?? false),
+              activeColor: T.ink,
+              visualDensity: VisualDensity.compact,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 9),
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 14.5,
+                        color: T.ink,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    note,
                     style: const TextStyle(
-                        fontFamilyFallback: T.kr, fontSize: 14.5, color: T.ink)),
-              ),
-              const SizedBox(height: 2),
-              Text(note,
-                  style: const TextStyle(
                       fontFamilyFallback: T.kr,
                       fontSize: 12,
                       color: T.inkSoft,
-                      height: 1.4)),
-            ]),
-          ),
-        ]),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

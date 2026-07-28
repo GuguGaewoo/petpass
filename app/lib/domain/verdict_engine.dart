@@ -31,10 +31,13 @@ class VerdictEngine {
   Verdict judge(PlaceConstraint p, PetProfile pet) {
     final chips = _buildChips(p);
     final baseline = p.requiredItems.where(baselineItems.contains).toList();
-    final extra = p.requiredItems.where((i) => !baselineItems.contains(i)).toList();
+    final extra = p.requiredItems
+        .where((i) => !baselineItems.contains(i))
+        .toList();
     final zoneNote = p.acmpyType == AcmpyType.partialArea ? p.etcInfo : '';
 
-    Verdict make(VerdictLevel level, String reason, {List<String>? items}) => Verdict(
+    Verdict make(VerdictLevel level, String reason, {List<String>? items}) =>
+        Verdict(
           level: level,
           reason: reason,
           requiredItems: items ?? const [],
@@ -74,12 +77,16 @@ class VerdictEngine {
 
     // ── 프로필 대조 ──
     if (p.maxWeightKg != null && pet.weightKg > p.maxWeightKg!) {
-      return make(VerdictLevel.impossible,
-          '${_kg(p.maxWeightKg!)}kg 이하만 가능 (${pet.name} ${_kg(pet.weightKg)}kg)');
+      return make(
+        VerdictLevel.impossible,
+        '${_kg(p.maxWeightKg!)}kg 이하만 가능 (${pet.name} ${_kg(pet.weightKg)}kg)',
+      );
     }
     if (p.sizeLimit != null && pet.size.rank > p.sizeLimit!.rank) {
-      return make(VerdictLevel.impossible,
-          '${p.sizeLimit!.label}까지만 가능 (${pet.name}은 ${pet.size.label})');
+      return make(
+        VerdictLevel.impossible,
+        '${p.sizeLimit!.label}까지만 가능 (${pet.name}은 ${pet.size.label})',
+      );
     }
     if (p.fierceExcluded && pet.isFierce) {
       return make(VerdictLevel.impossible, '맹견은 동반이 제한됩니다');
@@ -113,8 +120,10 @@ class VerdictEngine {
       return make(VerdictLevel.possible, '동반 가능하나 이용 구역이 제한됩니다');
     }
     if (p.maxWeightKg != null) {
-      return make(VerdictLevel.possible,
-          '${_kg(p.maxWeightKg!)}kg 이하 조건 충족 (${pet.name} ${_kg(pet.weightKg)}kg)');
+      return make(
+        VerdictLevel.possible,
+        '${_kg(p.maxWeightKg!)}kg 이하 조건 충족 (${pet.name} ${_kg(pet.weightKg)}kg)',
+      );
     }
     if (p.allBreedOk) {
       return make(VerdictLevel.possible, '전 견종 동반 가능합니다');

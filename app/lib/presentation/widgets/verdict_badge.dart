@@ -10,11 +10,11 @@ import '../../core/tokens.dart';
 import '../../domain/models/verdict.dart';
 
 ({Color fg, Color bg}) verdictColors(VerdictLevel l) => switch (l) {
-      VerdictLevel.possible => (fg: T.go, bg: T.goBg),
-      VerdictLevel.conditional => (fg: T.hold, bg: T.holdBg),
-      VerdictLevel.impossible => (fg: T.stop, bg: T.stopBg),
-      VerdictLevel.unknown => (fg: T.mute, bg: T.muteBg),
-    };
+  VerdictLevel.possible => (fg: T.go, bg: T.goBg),
+  VerdictLevel.conditional => (fg: T.hold, bg: T.holdBg),
+  VerdictLevel.impossible => (fg: T.stop, bg: T.stopBg),
+  VerdictLevel.unknown => (fg: T.mute, bg: T.muteBg),
+};
 
 class VerdictBadge extends StatelessWidget {
   const VerdictBadge(this.level, {super.key, this.large = false});
@@ -27,7 +27,9 @@ class VerdictBadge extends StatelessWidget {
     final c = verdictColors(level);
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: large ? 18 : 10, vertical: large ? 10 : 5),
+        horizontal: large ? 18 : 10,
+        vertical: large ? 10 : 5,
+      ),
       decoration: BoxDecoration(
         color: c.bg,
         border: Border.all(color: c.fg, width: large ? 2 : 1.2),
@@ -62,12 +64,15 @@ class InfoChip extends StatelessWidget {
         border: Border.all(color: T.line),
         borderRadius: BorderRadius.circular(T.r),
       ),
-      child: Text(label,
-          style: const TextStyle(
-              fontFamilyFallback: T.kr,
-              fontSize: 11.5,
-              color: T.inkSoft,
-              height: 1.2)),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontFamilyFallback: T.kr,
+          fontSize: 11.5,
+          color: T.inkSoft,
+          height: 1.2,
+        ),
+      ),
     );
   }
 }

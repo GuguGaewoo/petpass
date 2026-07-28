@@ -36,11 +36,8 @@ class PetProfile {
   });
 
   /// 체중만 알 때. 크기는 추정한다.
-  factory PetProfile.byWeight(String name, double kg) => PetProfile(
-        name: name,
-        weightKg: kg,
-        size: DogSize.fromWeight(kg),
-      );
+  factory PetProfile.byWeight(String name, double kg) =>
+      PetProfile(name: name, weightKg: kg, size: DogSize.fromWeight(kg));
 
   final String name;
   final double weightKg;
@@ -63,37 +60,37 @@ class PetProfile {
     bool? isFierce,
     bool? isGuideDog,
     bool? vaccinated,
-  }) =>
-      PetProfile(
-        name: name ?? this.name,
-        weightKg: weightKg ?? this.weightKg,
-        size: size ?? this.size,
-        breed: breed ?? this.breed,
-        isFierce: isFierce ?? this.isFierce,
-        isGuideDog: isGuideDog ?? this.isGuideDog,
-        vaccinated: vaccinated ?? this.vaccinated,
-      );
+  }) => PetProfile(
+    name: name ?? this.name,
+    weightKg: weightKg ?? this.weightKg,
+    size: size ?? this.size,
+    breed: breed ?? this.breed,
+    isFierce: isFierce ?? this.isFierce,
+    isGuideDog: isGuideDog ?? this.isGuideDog,
+    vaccinated: vaccinated ?? this.vaccinated,
+  );
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'weight_kg': weightKg,
-        'size': size.name,
-        'breed': breed,
-        'is_fierce': isFierce,
-        'is_guide_dog': isGuideDog,
-        'vaccinated': vaccinated,
-      };
+    'name': name,
+    'weight_kg': weightKg,
+    'size': size.name,
+    'breed': breed,
+    'is_fierce': isFierce,
+    'is_guide_dog': isGuideDog,
+    'vaccinated': vaccinated,
+  };
 
   static PetProfile fromJson(Map<String, dynamic> j) => PetProfile(
-        name: j['name'] as String? ?? '',
-        weightKg: (j['weight_kg'] as num?)?.toDouble() ?? 0,
-        size: DogSize.values.firstWhere(
-          (e) => e.name == j['size'],
-          orElse: () => DogSize.fromWeight((j['weight_kg'] as num?)?.toDouble() ?? 0),
-        ),
-        breed: j['breed'] as String? ?? '',
-        isFierce: j['is_fierce'] as bool? ?? false,
-        isGuideDog: j['is_guide_dog'] as bool? ?? false,
-        vaccinated: j['vaccinated'] as bool? ?? true,
-      );
+    name: j['name'] as String? ?? '',
+    weightKg: (j['weight_kg'] as num?)?.toDouble() ?? 0,
+    size: DogSize.values.firstWhere(
+      (e) => e.name == j['size'],
+      orElse: () =>
+          DogSize.fromWeight((j['weight_kg'] as num?)?.toDouble() ?? 0),
+    ),
+    breed: j['breed'] as String? ?? '',
+    isFierce: j['is_fierce'] as bool? ?? false,
+    isGuideDog: j['is_guide_dog'] as bool? ?? false,
+    vaccinated: j['vaccinated'] as bool? ?? true,
+  );
 }

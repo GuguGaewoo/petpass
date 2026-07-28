@@ -20,11 +20,11 @@ enum AcmpyType {
   unknownValue;
 
   static AcmpyType? parse(String? raw) => switch (raw) {
-        'all_area' => AcmpyType.allArea,
-        'partial_area' => AcmpyType.partialArea,
-        'unknown_value' => AcmpyType.unknownValue,
-        _ => null,
-      };
+    'all_area' => AcmpyType.allArea,
+    'partial_area' => AcmpyType.partialArea,
+    'unknown_value' => AcmpyType.unknownValue,
+    _ => null,
+  };
 }
 
 class PlaceConstraint {
@@ -118,54 +118,56 @@ class PlaceConstraint {
   final double confidence;
 
   static DogSize? _parseSize(String? raw) => switch (raw) {
-        'small' => DogSize.small,
-        'medium' => DogSize.medium,
-        'large' => DogSize.large,
-        _ => null,
-      };
+    'small' => DogSize.small,
+    'medium' => DogSize.medium,
+    'large' => DogSize.large,
+    _ => null,
+  };
 
   static List<String> _strList(dynamic v) =>
       (v as List?)?.map((e) => e.toString()).toList() ?? const [];
 
   factory PlaceConstraint.fromJson(Map<String, dynamic> j) => PlaceConstraint(
-        contentId: j['content_id']?.toString() ?? '',
-        title: j['title'] as String? ?? '',
-        address: j['address'] as String? ?? '',
-        contentType: j['content_type'] as String? ?? '',
-        contentTypeId: j['content_type_id'] as String? ?? '',
-        areaCode: j['area_code'] as String? ?? '',
-        lat: (j['lat'] as num?)?.toDouble(),
-        lng: (j['lng'] as num?)?.toDouble(),
-        tel: j['tel'] as String? ?? '',
-        image: j['image'] as String? ?? '',
-        hasDetail: j['has_detail'] as bool? ?? false,
-        acmpyType: AcmpyType.parse(j['acmpy_type'] as String?),
-        guideDogOnly: j['guide_dog_only'] as bool? ?? false,
-        explicitlyDenied: j['explicitly_denied'] as bool? ?? false,
-        needsInquiry: j['needs_inquiry'] as bool? ?? false,
-        allBreedOk: j['all_breed_ok'] as bool? ?? false,
-        maxWeightKg: (j['max_weight_kg'] as num?)?.toDouble(),
-        weightInEtcOnly: j['weight_in_etc_only'] as bool? ?? false,
-        sizeLimit: _parseSize(j['size_limit'] as String?),
-        fierceExcluded: j['fierce_excluded'] as bool? ?? false,
-        muzzleOverKg: (j['muzzle_over_kg'] as num?)?.toDouble(),
-        maxCount: (j['max_count'] as num?)?.toInt(),
-        requiredItems: _strList(j['required_items']),
-        freeUse: j['free_use'] as bool? ?? false,
-        seeEtcInfo: j['see_etc_info'] as bool? ?? false,
-        providedItems: _strList(j['provided_items']),
-        rentalItems: _strList(j['rental_items']),
-        facilities: _strList(j['facilities']),
-        extraFee: j['extra_fee'] as bool? ?? false,
-        outdoorOnly: j['outdoor_only'] as bool? ?? false,
-        riskNotes: j['risk_notes'] as String? ?? '',
-        etcInfo: j['etc_info'] as String? ?? '',
-        sourceText: (j['source_text'] as Map?)
-                ?.map((k, v) => MapEntry(k.toString(), v?.toString() ?? '')) ??
-            const {},
-        lastModified: j['last_modified'] == null
-            ? null
-            : DateTime.tryParse(j['last_modified'] as String),
-        confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
-      );
+    contentId: j['content_id']?.toString() ?? '',
+    title: j['title'] as String? ?? '',
+    address: j['address'] as String? ?? '',
+    contentType: j['content_type'] as String? ?? '',
+    contentTypeId: j['content_type_id'] as String? ?? '',
+    areaCode: j['area_code'] as String? ?? '',
+    lat: (j['lat'] as num?)?.toDouble(),
+    lng: (j['lng'] as num?)?.toDouble(),
+    tel: j['tel'] as String? ?? '',
+    image: j['image'] as String? ?? '',
+    hasDetail: j['has_detail'] as bool? ?? false,
+    acmpyType: AcmpyType.parse(j['acmpy_type'] as String?),
+    guideDogOnly: j['guide_dog_only'] as bool? ?? false,
+    explicitlyDenied: j['explicitly_denied'] as bool? ?? false,
+    needsInquiry: j['needs_inquiry'] as bool? ?? false,
+    allBreedOk: j['all_breed_ok'] as bool? ?? false,
+    maxWeightKg: (j['max_weight_kg'] as num?)?.toDouble(),
+    weightInEtcOnly: j['weight_in_etc_only'] as bool? ?? false,
+    sizeLimit: _parseSize(j['size_limit'] as String?),
+    fierceExcluded: j['fierce_excluded'] as bool? ?? false,
+    muzzleOverKg: (j['muzzle_over_kg'] as num?)?.toDouble(),
+    maxCount: (j['max_count'] as num?)?.toInt(),
+    requiredItems: _strList(j['required_items']),
+    freeUse: j['free_use'] as bool? ?? false,
+    seeEtcInfo: j['see_etc_info'] as bool? ?? false,
+    providedItems: _strList(j['provided_items']),
+    rentalItems: _strList(j['rental_items']),
+    facilities: _strList(j['facilities']),
+    extraFee: j['extra_fee'] as bool? ?? false,
+    outdoorOnly: j['outdoor_only'] as bool? ?? false,
+    riskNotes: j['risk_notes'] as String? ?? '',
+    etcInfo: j['etc_info'] as String? ?? '',
+    sourceText:
+        (j['source_text'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), v?.toString() ?? ''),
+        ) ??
+        const {},
+    lastModified: j['last_modified'] == null
+        ? null
+        : DateTime.tryParse(j['last_modified'] as String),
+    confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
+  );
 }
