@@ -238,52 +238,56 @@ class PlaceDetailScreen extends StatelessWidget {
                           child: Material(
                             color: Colors
                                 .transparent, // 투명이어야 부모 Container 배경색이 보인다
-                            child: ExpansionTile(
-                              tilePadding: EdgeInsets.zero,
-                              childrenPadding: const EdgeInsets.only(
-                                bottom: 12,
-                              ),
-                              title: Text(
-                                '판정 근거 원문',
-                                style: TextStyle(
-                                  fontFamilyFallback: T.kr,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: T.inkSoft,
+                            child: Material(
+                              color: Colors
+                                  .transparent, // 투명이어야 바깥 Container 배경색이 보인다
+                              child: ExpansionTile(
+                                tilePadding: EdgeInsets.zero,
+                                childrenPadding: const EdgeInsets.only(
+                                  bottom: 12,
                                 ),
+                                title: Text(
+                                  '판정 근거 원문',
+                                  style: TextStyle(
+                                    fontFamilyFallback: T.kr,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: T.inkSoft,
+                                  ),
+                                ),
+                                children: [
+                                  for (final e in place.sourceText.entries)
+                                    if (e.value.trim().isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 10,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _fieldNames[e.key] ?? e.key,
+                                              style: T.mono.copyWith(
+                                                fontSize: 10.5,
+                                                color: T.mute,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              e.value,
+                                              style: const TextStyle(
+                                                fontFamilyFallback: T.kr,
+                                                fontSize: 13,
+                                                color: T.ink,
+                                                height: 1.6,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                ],
                               ),
-                              children: [
-                                for (final e in place.sourceText.entries)
-                                  if (e.value.trim().isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 10,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _fieldNames[e.key] ?? e.key,
-                                            style: T.mono.copyWith(
-                                              fontSize: 10.5,
-                                              color: T.mute,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            e.value,
-                                            style: const TextStyle(
-                                              fontFamilyFallback: T.kr,
-                                              fontSize: 13,
-                                              color: T.ink,
-                                              height: 1.6,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                              ],
                             ),
                           ),
                         ),

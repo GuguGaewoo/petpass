@@ -24,7 +24,7 @@ class _SearchScreenState extends State<SearchScreen> {
   String _query = '';
   String? _area;
   String? _type;
-  bool _hidePossibleOnly = false;
+  bool _onlyPossible = false;
 
   static const _types = ['관광지', '숙박', '음식점', '레포츠', '쇼핑', '문화시설'];
 
@@ -34,17 +34,22 @@ class _SearchScreenState extends State<SearchScreen> {
     final pet = s.pet;
 
     final list = s.places.where((p) {
-      if (_area != null && p.areaCode != _area) return false;
-      if (_type != null && p.contentType != _type) return false;
+      if (_area != null && p.areaCode != _area) {
+        return false;
+      }
+      if (_type != null && p.contentType != _type) {
+        return false;
+      }
       if (_query.isNotEmpty &&
           !p.title.contains(_query) &&
-          !p.address.contains(_query))
+          !p.address.contains(_query)) {
         return false;
+      }
       return true;
     }).toList();
 
     final judged = [for (final p in list) (place: p, verdict: s.judge(p))];
-    if (_hidePossibleOnly) {
+    if (_onlyPossible) {
       judged.removeWhere((e) => e.verdict.level != VerdictLevel.possible);
     }
     judged.sort(
@@ -127,10 +132,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: [
                       _filter(
                         '가능한 곳만',
-                        _hidePossibleOnly,
-                        () => setState(
-                          () => _hidePossibleOnly = !_hidePossibleOnly,
-                        ),
+                        _onlyPossible,
+                        () => setState(() => _onlyPossible = !_onlyPossible),
                       ),
                       const SizedBox(width: 6),
                       for (final t in _types) ...[
@@ -194,8 +197,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                           itemCount: judged.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
                           itemBuilder: (context, i) {
                             final e = judged[i];
                             return _PlaceCard(
@@ -260,17 +262,18 @@ class _PlaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Material 을 가장 바깥에 두고 카드 배경색을 여기서 칠한다.
-    // 그래야 InkWell 물결이 배경 '위에' 그려진다.
+    // 그래야 InkWell 의 탭 물결이 카드 배경 "위에" 그려진다.
     return Material(
-      color: T.card, // Container 의 decoration.color 를 여기로 옮김
+      color: T.card, // Container 의 decoration.color 를 여기로 옮겼다
       borderRadius: BorderRadius.circular(T.rCard),
       clipBehavior: Clip.antiAlias, // 물결이 둥근 모서리를 넘지 않게
       child: InkWell(
         onTap: onTap,
+        // borderRadius 인자는 불필요. 위 Material 이 클리핑을 담당한다.
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            // color 는 위 Material 로 이동했다
+            // color 를 여기 남기면 물결이 다시 가려진다. 테두리만 담당.
             border: Border.all(color: T.line),
             borderRadius: BorderRadius.circular(T.rCard),
           ),
@@ -299,7 +302,7 @@ class _PlaceCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${place.contentType} · ${place.address}',
+                          '${place.contentType} \u00b7 ${place.address}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

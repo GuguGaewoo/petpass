@@ -4,8 +4,6 @@
 /// 신호등 원색 대신 관인·확인증에 가까운 깊고 낮은 채도를 쓴다.
 library;
 
-import 'dart:ui' show FontFeature;
-
 import 'package:flutter/material.dart';
 
 class T {
