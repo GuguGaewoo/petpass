@@ -25,3 +25,4 @@ app/android/.gradle/
 .DS_Store
 .idea/
 .vscode/
+_tmp/
