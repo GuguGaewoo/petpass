@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rules import patterns as P
 from tourapi import NORMALIZED_FILE, cid_of, merged_records, save_json
 
-SCHEMA_VERSION = 2
+# v3: 맹견 조건부 입마개(muzzle_if_fierce) 추가, 배변봉투 회수
+SCHEMA_VERSION = 3
 
 CONDITION_FIELDS = [
     "acmpyTypeCd", "acmpyPsblCpam", "acmpyNeedMtr", "relaAcdntRiskMtr",
@@ -72,13 +73,38 @@ def normalize(rec):
     weight_source = "acmpyPsblCpam" if max_weight is not None else None
     weight_in_etc = max_weight is None and P.extract_max_weight(etc) is not None
 
-    muzzle_over_kg = P.extract_muzzle_threshold(cpam) or P.extract_muzzle_threshold(etc)
+    # 입마개: 체중 조건과 견종 조건은 별개다.
+    #   "N kg 이상 입마개"      -> 체중 조건 (muzzle_over_kg)
+    #   "맹견의 경우 입마개"     -> 견종 조건 (muzzle_if_fierce)
+    #   "맹견 및 대형견의 경우"  -> 둘 다. 대형견 경계 25kg 을 임계값으로
+    #
+    # 각 정규식은 반드시 단일 필드에만 적용한다. source_text 를 이어붙이면
+    # cpam 의 "맹견 제외" 와 need 의 "입마개 착용" 이 필드 경계를 넘어
+    # "맹견 ... 입마개" 로 오탐된다.
+    muzzle_over_kg = (
+        P.extract_muzzle_threshold(cpam)
+        or P.extract_muzzle_threshold(etc)
+        or P.extract_muzzle_large_threshold(cpam)
+        or P.extract_muzzle_large_threshold(etc)
+    )
+    muzzle_if_fierce = (
+        P.extract_muzzle_if_fierce(cpam) or P.extract_muzzle_if_fierce(etc)
+    )
+
+    # 필드 간 모순 해소.
+    # acmpyPsblCpam 에 "맹견 제외" 가 있는데 etcAcmpyInfo 에는 "맹견의 경우
+    # 입마개" 가 있는 경우가 있다(실측 1건). 후자는 295건에 동일하게 박힌
+    # 정형 문구이고 전자는 그 장소가 직접 기재한 값이므로 전자가 우선한다.
+    # 맹견이 아예 못 들어가는 곳에서 입마개 조건은 의미가 없다.
+    if fierce_excluded:
+        muzzle_if_fierce = False
+
     max_count = P.extract_max_count(cpam) or P.extract_max_count(etc)
 
     # ── 견종 ──
     all_breed = P.find_any(cpam, P.ALL_BREED)
     size_limit = None if all_breed else P.extract_size(cpam)
-    fierce_excluded = P.find_any(cpam, P.FIERCE_EXCLUDED) or P.find_any(etc, P.FIERCE_EXCLUDED)
+    fierce_excluded = P.extract_fierce_excluded(cpam) or P.extract_fierce_excluded(etc)
 
     # ── 준비물 ──
     items, free_use, see_etc = P.extract_need_items(need)
@@ -87,6 +113,23 @@ def normalize(rec):
     vaccine_required = P.find_any(cpam, P.VACCINE) or P.find_any(etc, P.VACCINE)
     if vaccine_required and "예방접종 증명" not in items:
         items.append("예방접종 증명")
+
+    provided = P.split_items(rec.get("relaFrnshPrdlst"))
+
+    # ── 배변봉투 ──
+    # 실측 358건이 언급하는데 규칙이 없어 전량 유실되고 있었다.
+    # 별도 필드를 만들지 않고 required_items 에 넣는다. 동물보호법상 장소와
+    # 무관한 소유자 의무이므로, Dart 판정 엔진의 baselineItems 가 등급에
+    # 반영하지 않고 "기본" 으로 표시한다. 스키마 변경을 최소화하는 방식이다.
+    poop_bag, poop_provided = P.extract_poop_bag(etc)
+    if not poop_bag:
+        poop_bag, poop_provided = P.extract_poop_bag(cpam)
+    if any("배변" in i for i in provided):
+        poop_bag, poop_provided = True, True   # 비치 품목에 이미 있음
+    if poop_bag and "배변봉투" not in items:
+        items.append("배변봉투")
+    if poop_provided and not any("배변" in i for i in provided):
+        provided.append("배변봉투")
 
     # ── 구역 제한 ──
     # 일부구역인데 어느 구역인지는 자연어로만 있음 → 원문 확인 유도 플래그
@@ -132,12 +175,13 @@ def normalize(rec):
         "size_limit": size_limit,
         "fierce_excluded": fierce_excluded,
         "muzzle_over_kg": muzzle_over_kg,
+        "muzzle_if_fierce": muzzle_if_fierce,
         "max_count": max_count,
         "required_items": items,
         "free_use": free_use,
         "see_etc_info": see_etc,
         "zone_detail_in_text": zone_detail_in_text,
-        "provided_items": P.split_items(rec.get("relaFrnshPrdlst")),
+        "provided_items": provided,
         "rental_items": P.split_items(rec.get("relaRntlPrdlst")),
         "purchasable_items": P.split_items(rec.get("relaPurcPrdlst")),
         "facilities": P.split_items(rec.get("relaPosesFclty")),
@@ -178,6 +222,18 @@ def main():
     print(f"  체중 상한 확정         {cnt(lambda r: r['max_weight_kg'] is not None):>4}건")
     print(f"  견종 크기 제한         {cnt(lambda r: r['size_limit']):>4}건")
     print(f"  준비물 추출            {cnt(lambda r: r['required_items']):>4}건")
+
+    def has(r, kw):
+        return any(kw in i for i in r["required_items"])
+
+    print("\n── 조건절 회수 (v3 신규) ──")
+    print(f"  맹견 조건부 입마개     {cnt(lambda r: r['muzzle_if_fierce']):>4}건")
+    print(f"  체중 조건부 입마개     {cnt(lambda r: r['muzzle_over_kg'] is not None):>4}건")
+    print(f"  입마개 무조건 요구     {cnt(lambda r: has(r, '입마개')):>4}건")
+    print(f"  배변봉투 요구          {cnt(lambda r: has(r, '배변봉투')):>4}건")
+    print(f"   └ 현장 비치           {cnt(lambda r: any('배변' in i for i in r['provided_items'])):>4}건")
+    print(f"  목줄 요구              {cnt(lambda r: has(r, '목줄')):>4}건")
+    print(f"  맹견 배제              {cnt(lambda r: r['fierce_excluded']):>4}건")
 
     print("\n── 주의가 필요한 케이스 ──")
     print(f"  안내견 전용            {cnt(lambda r: r['guide_dog_only']):>4}건")
