@@ -26,6 +26,8 @@ PlaceConstraint place({
   bool inquiry = false,
   bool allBreed = false,
   double? maxWeight,
+  double? muzzleOver,
+  bool muzzleIfFierce = false,
   DogSize? sizeLimit,
   bool fierceExcluded = false,
   List<String> items = const [],
@@ -33,28 +35,29 @@ PlaceConstraint place({
   bool weightInEtc = false,
   bool seeEtc = false,
   String etc = '',
-}) =>
-    PlaceConstraint(
-      contentId: '1',
-      title: '테스트',
-      hasDetail: hasDetail,
-      acmpyType: type,
-      guideDogOnly: guideDogOnly,
-      explicitlyDenied: denied,
-      needsInquiry: inquiry,
-      allBreedOk: allBreed,
-      maxWeightKg: maxWeight,
-      sizeLimit: sizeLimit,
-      fierceExcluded: fierceExcluded,
-      requiredItems: items,
-      providedItems: provided,
-      weightInEtcOnly: weightInEtc,
-      seeEtcInfo: seeEtc,
-      etcInfo: etc,
-      lastModified: DateTime(2024, 12, 18),
-      sourceText: const {'acmpyTypeCd': '전구역 동반가능'},
-      confidence: 0.75,
-    );
+}) => PlaceConstraint(
+  contentId: '1',
+  title: '테스트',
+  hasDetail: hasDetail,
+  acmpyType: type,
+  guideDogOnly: guideDogOnly,
+  explicitlyDenied: denied,
+  needsInquiry: inquiry,
+  allBreedOk: allBreed,
+  maxWeightKg: maxWeight,
+  muzzleOverKg: muzzleOver,
+  muzzleIfFierce: muzzleIfFierce,
+  sizeLimit: sizeLimit,
+  fierceExcluded: fierceExcluded,
+  requiredItems: items,
+  providedItems: provided,
+  weightInEtcOnly: weightInEtc,
+  seeEtcInfo: seeEtc,
+  etcInfo: etc,
+  lastModified: DateTime(2024, 12, 18),
+  sourceText: const {'acmpyTypeCd': '전구역 동반가능'},
+  confidence: 0.75,
+);
 
 void main() {
   group('불가 판정', () {
@@ -78,30 +81,41 @@ void main() {
     });
 
     test('맹견 제외 — 맹견이 아니면 영향 없음', () {
-      expect(engine.judge(place(fierceExcluded: true), maltese).level,
-          VerdictLevel.possible);
+      expect(
+        engine.judge(place(fierceExcluded: true), maltese).level,
+        VerdictLevel.possible,
+      );
       final fierce = maltese.copyWith(isFierce: true);
-      expect(engine.judge(place(fierceExcluded: true), fierce).level,
-          VerdictLevel.impossible);
+      expect(
+        engine.judge(place(fierceExcluded: true), fierce).level,
+        VerdictLevel.impossible,
+      );
     });
 
     test('명시적 동반 불가', () {
-      expect(engine.judge(place(denied: true), maltese).level,
-          VerdictLevel.impossible);
+      expect(
+        engine.judge(place(denied: true), maltese).level,
+        VerdictLevel.impossible,
+      );
     });
   });
 
   group('보조견 예외', () {
     test('보조견은 안내견 전용 장소에서도 가능', () {
       final guide = maltese.copyWith(isGuideDog: true);
-      expect(engine.judge(place(guideDogOnly: true), guide).level,
-          VerdictLevel.possible);
+      expect(
+        engine.judge(place(guideDogOnly: true), guide).level,
+        VerdictLevel.possible,
+      );
     });
 
     test('보조견은 체중 제한도 적용받지 않는다', () {
       // 장애인복지법상 보조견 출입 거부는 금지되어 있다.
       final guide = retriever.copyWith(isGuideDog: true);
-      expect(engine.judge(place(maxWeight: 5), guide).level, VerdictLevel.possible);
+      expect(
+        engine.judge(place(maxWeight: 5), guide).level,
+        VerdictLevel.possible,
+      );
     });
   });
 
@@ -128,8 +142,7 @@ void main() {
     });
 
     test('현장 비치품은 챙길 목록에서 빠진다', () {
-      final v = engine.judge(
-          place(items: ['이동장'], provided: ['이동장']), maltese);
+      final v = engine.judge(place(items: ['이동장'], provided: ['이동장']), maltese);
       expect(v.itemsToBring, isEmpty);
       expect(v.reason, contains('현장 비치'));
     });
@@ -138,6 +151,39 @@ void main() {
       final v = engine.judge(place(weightInEtc: true), maltese);
       expect(v.level, VerdictLevel.conditional);
       expect(v.reason, contains('원문'));
+    });
+  });
+
+  group('입마개', () {
+    test('체중 기준을 넘으면 준비물에 들어간다', () {
+      // muzzleOverKg 는 별도 필드라 requiredItems 에 없다.
+      final v = engine.judge(place(muzzleOver: 20), retriever);
+      expect(v.level, VerdictLevel.conditional);
+      expect(v.requiredItems, contains('입마개'));
+    });
+
+    test('체중 기준 미만이면 들어가지 않는다', () {
+      final v = engine.judge(place(muzzleOver: 20), maltese);
+      expect(v.requiredItems, isNot(contains('입마개')));
+      expect(v.level, VerdictLevel.possible);
+    });
+
+    test('맹견 조건부 — 맹견에게만 발동한다', () {
+      // 실측 295건. etcAcmpyInfo 의 '맹견의 경우 입마개' 조항.
+      final p = place(muzzleIfFierce: true);
+      expect(engine.judge(p, maltese).level, VerdictLevel.possible);
+      final fierce = maltese.copyWith(isFierce: true);
+      final v = engine.judge(p, fierce);
+      expect(v.level, VerdictLevel.conditional);
+      expect(v.requiredItems, contains('입마개'));
+    });
+
+    test('배변봉투는 등급을 낮추지 않는다', () {
+      // 실측 372건. 동물보호법상 장소와 무관한 소유자 의무.
+      final v = engine.judge(place(items: ['목줄', '배변봉투']), maltese);
+      expect(v.level, VerdictLevel.possible);
+      expect(v.baselineItems, containsAll(['목줄', '배변봉투']));
+      expect(v.requiredItems, isEmpty);
     });
   });
 
@@ -165,17 +211,24 @@ void main() {
 
   group('정보없음', () {
     test('상세 데이터 없음', () {
-      expect(engine.judge(place(hasDetail: false), maltese).level,
-          VerdictLevel.unknown);
+      expect(
+        engine.judge(place(hasDetail: false), maltese).level,
+        VerdictLevel.unknown,
+      );
     });
 
     test('전화문의 필요', () {
-      expect(engine.judge(place(inquiry: true), maltese).level,
-          VerdictLevel.unknown);
+      expect(
+        engine.judge(place(inquiry: true), maltese).level,
+        VerdictLevel.unknown,
+      );
     });
 
     test('동반 유형 미기재', () {
-      expect(engine.judge(place(type: null), maltese).level, VerdictLevel.unknown);
+      expect(
+        engine.judge(place(type: null), maltese).level,
+        VerdictLevel.unknown,
+      );
     });
   });
 
@@ -195,8 +248,9 @@ void main() {
 
     test('일부구역이면 구역 원문을 함께 전달한다', () {
       final v = engine.judge(
-          place(type: AcmpyType.partialArea, etc: '카라반 동반 불가(오토캠핑장만 가능)'),
-          maltese);
+        place(type: AcmpyType.partialArea, etc: '카라반 동반 불가(오토캠핑장만 가능)'),
+        maltese,
+      );
       expect(v.zoneNote, contains('오토캠핑장'));
       expect(v.needsSourceCheck, isTrue);
     });

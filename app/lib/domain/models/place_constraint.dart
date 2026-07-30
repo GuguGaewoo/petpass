@@ -50,6 +50,7 @@ class PlaceConstraint {
     this.sizeLimit,
     this.fierceExcluded = false,
     this.muzzleOverKg,
+    this.muzzleIfFierce = false,
     this.maxCount,
     this.requiredItems = const [],
     this.freeUse = false,
@@ -96,6 +97,10 @@ class PlaceConstraint {
 
   /// 'N kg 이상 입마개 필수' 의 N. 체중 상한이 아니다.
   final double? muzzleOverKg;
+
+  /// '맹견의 경우 입마개 착용' — 견종 조건부 요구.
+  /// muzzleOverKg(체중 조건부)와 별개다. 실측 295건.
+  final bool muzzleIfFierce;
 
   final int? maxCount;
   final List<String> requiredItems;
@@ -149,6 +154,7 @@ class PlaceConstraint {
     sizeLimit: _parseSize(j['size_limit'] as String?),
     fierceExcluded: j['fierce_excluded'] as bool? ?? false,
     muzzleOverKg: (j['muzzle_over_kg'] as num?)?.toDouble(),
+    muzzleIfFierce: j['muzzle_if_fierce'] as bool? ?? false,
     maxCount: (j['max_count'] as num?)?.toInt(),
     requiredItems: _strList(j['required_items']),
     freeUse: j['free_use'] as bool? ?? false,

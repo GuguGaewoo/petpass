@@ -26,14 +26,22 @@ class VerdictEngine {
   ///
   /// 입마개는 맹견 한정 의무이므로 여기 포함하지 않는다. 일반 반려견에게는
   /// 그 장소만의 요구이며, 챙기지 않으면 실제로 입장을 거부당한다.
-  static const baselineItems = {'목줄'};
+  /// 배변봉투도 동물보호법상 장소와 무관한 소유자 의무다(실측 372건).
+  /// 목줄과 같은 이유로 등급에 반영하지 않는다.
+  static const baselineItems = {'목줄', '배변봉투'};
 
   Verdict judge(PlaceConstraint p, PetProfile pet) {
     final chips = _buildChips(p);
-    final baseline = p.requiredItems.where(baselineItems.contains).toList();
-    final extra = p.requiredItems
-        .where((i) => !baselineItems.contains(i))
-        .toList();
+    // 조건부 입마개는 별도 필드로 파싱되어 requiredItems 에 없다.
+    // 그대로 두면 칩에는 뜨는데 준비물 목록에는 빠지는 모순이 생긴다.
+    // 체중 조건과 견종 조건은 서로 별개이며 각각 프로필로 평가한다.
+    final all = <String>{
+      ...p.requiredItems,
+      if (p.muzzleOverKg != null && pet.weightKg >= p.muzzleOverKg!) '입마개',
+      if (p.muzzleIfFierce && pet.isFierce) '입마개',
+    };
+    final baseline = all.where(baselineItems.contains).toList();
+    final extra = all.where((i) => !baselineItems.contains(i)).toList();
     final zoneNote = p.acmpyType == AcmpyType.partialArea ? p.etcInfo : '';
 
     Verdict make(VerdictLevel level, String reason, {List<String>? items}) =>
@@ -139,6 +147,7 @@ class VerdictEngine {
     if (p.fierceExcluded) out.add('맹견 제외');
     if (p.maxCount != null) out.add('최대 ${p.maxCount}마리');
     if (p.muzzleOverKg != null) out.add('${_kg(p.muzzleOverKg!)}kg↑ 입마개');
+    if (p.muzzleIfFierce) out.add('맹견 입마개');
     if (p.extraFee) out.add('추가 요금');
     if (p.outdoorOnly) out.add('야외만');
     return out;
