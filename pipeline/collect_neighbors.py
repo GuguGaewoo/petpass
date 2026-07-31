@@ -121,6 +121,11 @@ def main():
                     "address": " ".join(
                         x for x in [it.get("addr1"), it.get("addr2")] if x).strip(),
                     "image": it.get("firstimage") or "",
+                    # 분류 코드. 야외/실내 판별에 쓴다.
+                    # A0101 자연관광지, A0102 관광자원, A0206 문화시설 등
+                    "cat1": it.get("cat1") or "",
+                    "cat2": it.get("cat2") or "",
+                    "cat3": it.get("cat3") or "",
                     "distance_m": dist,
                     # 동반 데이터가 있는 곳만 판정 가능. 일정 추천은 이것만 후보로 삼는다
                     "pet_data": ncid in pet_ids,

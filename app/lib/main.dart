@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
@@ -27,6 +28,7 @@ class _PetPassAppState extends State<PetPassApp> {
     return MaterialApp(
       title: '펫패스',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const _AllDeviceScroll(),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: T.go),
         scaffoldBackgroundColor: T.paper,
@@ -66,4 +68,18 @@ class _PetPassAppState extends State<PetPassApp> {
       ),
     );
   }
+}
+
+/// Flutter Web 은 기본적으로 터치와 트랙패드만 드래그 스크롤로 인식한다.
+/// 데스크톱 브라우저에서 마우스로 가로 목록을 밀 수 없어 필터가 잘려 보인다.
+class _AllDeviceScroll extends MaterialScrollBehavior {
+  const _AllDeviceScroll();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }
