@@ -26,6 +26,10 @@ class _SearchScreenState extends State<SearchScreen> {
   String? _type;
   bool _onlyPossible = false;
 
+  /// 지역은 17개라 모두 펼치면 좁은 화면에서 목록을 밀어낸다.
+  /// 기본은 접고, 선택된 것만 보여준다.
+  bool _areaOpen = false;
+
   static const _types = ['관광지', '숙박', '음식점', '레포츠', '쇼핑', '문화시설'];
 
   @override
@@ -82,7 +86,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         child: Text(
                           pet == null
                               ? '장소 찾기'
-                              : '${pet.name} · ${pet.weightKg.toStringAsFixed(1)}kg · ${pet.size.label}',
+                              : '${pet.name} · ${pet.weightKg.toStringAsFixed(1)}kg · ${pet.size.label}'
+                                    '${pet.isFierce ? ' · 맹견' : ''}'
+                                    '${pet.isGuideDog ? ' · 보조견' : ''}',
                           style: const TextStyle(
                             fontFamilyFallback: T.kr,
                             fontSize: 15,
@@ -124,41 +130,69 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: 46,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+
+                // 필터.
+                //
+                // 가로 스크롤은 뒤에 무엇이 있는지 보이지 않아 사용자가 놓친다.
+                // Wrap 으로 두면 화면 폭에 맞춰 알아서 접히고 전체가 한눈에 들어온다.
+                // 성격이 다른 셋을 덩어리로 나눈다: 판정 / 유형 / 지역.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _filter(
                         '가능한 곳만',
                         _onlyPossible,
                         () => setState(() => _onlyPossible = !_onlyPossible),
                       ),
-                      const SizedBox(width: 6),
-                      for (final t in _types) ...[
+                      const SizedBox(height: 14),
+
+                      _groupLabel('유형'),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final t in _types)
+                            _filter(
+                              t,
+                              _type == t,
+                              () =>
+                                  setState(() => _type = _type == t ? null : t),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      _groupLabel('지역', trailing: _areaToggle()),
+                      if (_areaOpen)
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final e in areaNames.entries)
+                              _filter(
+                                e.value,
+                                _area == e.key,
+                                () => setState(
+                                  () => _area = _area == e.key ? null : e.key,
+                                ),
+                              ),
+                          ],
+                        )
+                      else if (_area != null)
+                        // 접어도 선택된 지역은 남겨 현재 필터 상태를 드러낸다
                         _filter(
-                          t,
-                          _type == t,
-                          () => setState(() => _type = _type == t ? null : t),
+                          areaNames[_area] ?? '',
+                          true,
+                          () => setState(() => _area = null),
                         ),
-                        const SizedBox(width: 6),
-                      ],
-                      for (final e in areaNames.entries) ...[
-                        _filter(
-                          e.value,
-                          _area == e.key,
-                          () => setState(
-                            () => _area = _area == e.key ? null : e.key,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
                     ],
                   ),
                 ),
+
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
                   child: Row(
                     children: [
                       Text(
@@ -223,13 +257,60 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  /// 필터 묶음 제목
+  Widget _groupLabel(String label, {Widget? trailing}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamilyFallback: T.kr,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: T.mute,
+              letterSpacing: 0.4,
+            ),
+          ),
+          if (trailing != null) ...[const SizedBox(width: 10), trailing],
+        ],
+      ),
+    );
+  }
+
+  Widget _areaToggle() {
+    return GestureDetector(
+      onTap: () => setState(() => _areaOpen = !_areaOpen),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _areaOpen ? '접기' : '전체 보기',
+            style: const TextStyle(
+              fontFamilyFallback: T.kr,
+              fontSize: 11.5,
+              color: T.inkSoft,
+            ),
+          ),
+          Icon(
+            _areaOpen ? Icons.expand_less : Icons.expand_more,
+            size: 15,
+            color: T.inkSoft,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _filter(String label, bool on, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        // Wrap 이 간격을 담당하므로 margin 을 두지 않는다.
+        // 대신 높이가 고정되지 않으므로 세로 패딩을 준다.
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: on ? T.ink : T.card,
           border: Border.all(color: on ? T.ink : T.line),
@@ -264,12 +345,11 @@ class _PlaceCard extends StatelessWidget {
     // Material 을 가장 바깥에 두고 카드 배경색을 여기서 칠한다.
     // 그래야 InkWell 의 탭 물결이 카드 배경 "위에" 그려진다.
     return Material(
-      color: T.card, // Container 의 decoration.color 를 여기로 옮겼다
+      color: T.card,
       borderRadius: BorderRadius.circular(T.rCard),
-      clipBehavior: Clip.antiAlias, // 물결이 둥근 모서리를 넘지 않게
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        // borderRadius 인자는 불필요. 위 Material 이 클리핑을 담당한다.
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
