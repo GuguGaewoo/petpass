@@ -9,6 +9,7 @@ import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
 import '../../domain/models/verdict.dart';
 import '../detail/place_detail_screen.dart';
+import '../saved/saved_screen.dart';
 import '../widgets/verdict_badge.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -96,6 +97,31 @@ class _SearchScreenState extends State<SearchScreen> {
                             color: T.ink,
                           ),
                         ),
+                      ),
+                      ListenableBuilder(
+                        listenable: s,
+                        builder: (context, _) {
+                          final n = s.savedCount;
+                          return TextButton.icon(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => SavedScreen(state: s),
+                              ),
+                            ),
+                            icon: Icon(
+                              n > 0 ? Icons.star : Icons.star_border,
+                              size: 18,
+                              color: n > 0 ? T.hold : T.inkSoft,
+                            ),
+                            label: Text(
+                              n > 0 ? '$n' : '',
+                              style: T.mono.copyWith(
+                                fontSize: 12.5,
+                                color: T.inkSoft,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

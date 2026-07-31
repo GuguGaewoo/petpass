@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
+import '../nearby/nearby_screen.dart';
 import '../widgets/verdict_badge.dart';
 
 class PlaceDetailScreen extends StatelessWidget {
@@ -49,13 +50,31 @@ class PlaceDetailScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back, size: 20),
-                    color: T.inkSoft,
-                  ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back, size: 20),
+                      color: T.inkSoft,
+                    ),
+                    const Spacer(),
+                    // 저장은 기기 안에만 기록한다. 프로필과 같은 원칙이다.
+                    ListenableBuilder(
+                      listenable: state,
+                      builder: (context, _) {
+                        final on = state.isSaved(place.contentId);
+                        return IconButton(
+                          onPressed: () => state.toggleSaved(place.contentId),
+                          icon: Icon(
+                            on ? Icons.star : Icons.star_border,
+                            size: 22,
+                            color: on ? T.hold : T.inkSoft,
+                          ),
+                          tooltip: on ? '저장 해제' : '저장',
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 Text(
                   place.title,
@@ -328,6 +347,33 @@ class PlaceDetailScreen extends StatelessWidget {
                   ),
                 ),
 
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 50,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            NearbyScreen(state: state, place: place),
+                      ),
+                    ),
+                    icon: const Icon(Icons.explore_outlined, size: 18),
+                    label: const Text(
+                      '주변에 함께 갈 곳 보기',
+                      style: TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: T.ink,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(T.r),
+                      ),
+                    ),
+                  ),
+                ),
                 if (place.tel.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
