@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 import '../../app_state.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
+import '../../domain/models/verdict.dart';
 import '../nearby/nearby_screen.dart';
+import '../widgets/map_view.dart';
 import '../widgets/verdict_badge.dart';
 
 class PlaceDetailScreen extends StatelessWidget {
@@ -346,6 +348,38 @@ class PlaceDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // 지도. 좌표가 없는 장소는 표시하지 않는다.
+                if (place.lat != null && place.lng != null) ...[
+                  const SizedBox(height: 20),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(T.rCard),
+                    child: SizedBox(
+                      height: 200,
+                      child: MapView(
+                        lat: place.lat!,
+                        lng: place.lng!,
+                        zoom: 15,
+                        pins: [
+                          MapPin(
+                            id: place.contentId,
+                            lat: place.lat!,
+                            lng: place.lng!,
+                            title: place.title,
+                            // 판정 등급으로 색을 나눈다.
+                            // 지도만 보고도 갈 수 있는 곳인지 드러나게 한다.
+                            color: switch (v.level) {
+                              VerdictLevel.possible => '#1F6F4A',
+                              VerdictLevel.conditional => '#9A6209',
+                              VerdictLevel.impossible => '#A32F2A',
+                              VerdictLevel.unknown => '#6E7671',
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 16),
                 SizedBox(

@@ -4,6 +4,8 @@
 /// ChangeNotifier 로 충분하며, 의존성이 적을수록 배포가 단순하다.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,6 +19,7 @@ import 'domain/verdict_engine.dart';
 
 class AppState extends ChangeNotifier {
   static const _savedKey = 'saved_place_ids';
+  static const _petKey = 'pet_profile';
 
   final _repo = PlaceRepository();
   final _engine = const VerdictEngine();
@@ -50,6 +53,10 @@ class AppState extends ChangeNotifier {
     try {
       _prefs = await SharedPreferences.getInstance();
       _saved.addAll(_prefs?.getStringList(_savedKey) ?? const []);
+      final raw = _prefs?.getString(_petKey);
+      if (raw != null) {
+        _pet = PetProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      }
     } catch (_) {
       // 무시
     }
@@ -59,6 +66,8 @@ class AppState extends ChangeNotifier {
 
   void setPet(PetProfile p) {
     _pet = p;
+    // 프로필도 기기 안에만 둔다. 서버로 보내지 않는다.
+    _prefs?.setString(_petKey, jsonEncode(p.toJson()));
     notifyListeners();
   }
 

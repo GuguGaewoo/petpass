@@ -31,6 +31,13 @@
 
   <title>petpass</title>
   <link rel="manifest" href="manifest.json">
+  <!-- 네이버 지도 JS v3.
+       스크립트는 map_view_web.dart 가 Client ID 와 함께 동적으로 삽입한다.
+       여기에 키를 하드코딩하지 않는다. -->
+  <style>
+    .petpass-map { width: 100%; height: 100%; }
+  </style>
+  <script src="naver_map.js"></script>
 </head>
 <body>
   <!--
