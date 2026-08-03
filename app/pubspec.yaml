@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_naver_map: ^1.4.4
   shared_preferences: ^2.5.5
   web: ^1.1.1
 

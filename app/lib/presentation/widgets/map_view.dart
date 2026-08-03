@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 
 import 'map_view_stub.dart'
     if (dart.library.js_interop) 'map_view_web.dart'
+    if (dart.library.io) 'map_view_mobile.dart'
     as impl;
 
 /// 지도에 찍을 지점.
