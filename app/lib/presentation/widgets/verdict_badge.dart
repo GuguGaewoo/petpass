@@ -1,7 +1,8 @@
-/// 판정 뱃지 — 이 앱의 시그니처.
+/// 판정 뱃지.
 ///
-/// 확인증에 찍힌 도장처럼 보이게 만든다. 각진 모서리, 굵은 테두리,
-/// 넓은 자간. 화면에서 과감한 요소는 여기 하나뿐이고 나머지는 조용하다.
+/// 이전에는 각진 테두리에 넓은 자간으로 도장처럼 만들었으나,
+/// 관공서 서류처럼 읽혀 부드러운 알약 형태로 바꿨다.
+/// 색 자체가 판정을 전달하므로 형태까지 강할 필요가 없다.
 library;
 
 import 'package:flutter/material.dart';
@@ -13,7 +14,23 @@ import '../../domain/models/verdict.dart';
   VerdictLevel.possible => (fg: T.go, bg: T.goBg),
   VerdictLevel.conditional => (fg: T.hold, bg: T.holdBg),
   VerdictLevel.impossible => (fg: T.stop, bg: T.stopBg),
-  VerdictLevel.unknown => (fg: T.mute, bg: T.muteBg),
+  VerdictLevel.unknown => (fg: T.unknown, bg: T.unknownBg),
+};
+
+/// 목록·상세에서 쓰는 짧은 라벨.
+/// 뱃지가 답하는 질문은 하나다: "데려가면 들어갈 수 있나?"
+String verdictLabel(VerdictLevel l) => switch (l) {
+  VerdictLevel.possible => '갈 수 있어요',
+  VerdictLevel.conditional => '준비물이 필요해요',
+  VerdictLevel.impossible => '갈 수 없어요',
+  VerdictLevel.unknown => '정보가 없어요',
+};
+
+IconData _icon(VerdictLevel l) => switch (l) {
+  VerdictLevel.possible => Icons.check_rounded,
+  VerdictLevel.conditional => Icons.backpack_outlined,
+  VerdictLevel.impossible => Icons.block_rounded,
+  VerdictLevel.unknown => Icons.help_outline_rounded,
 };
 
 class VerdictBadge extends StatelessWidget {
@@ -27,24 +44,29 @@ class VerdictBadge extends StatelessWidget {
     final c = verdictColors(level);
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: large ? 18 : 10,
-        vertical: large ? 10 : 5,
+        horizontal: large ? 14 : 10,
+        vertical: large ? 8 : 5,
       ),
       decoration: BoxDecoration(
         color: c.bg,
-        border: Border.all(color: c.fg, width: large ? 2 : 1.2),
-        borderRadius: BorderRadius.circular(T.r),
+        borderRadius: BorderRadius.circular(T.rPill),
       ),
-      child: Text(
-        level.label,
-        style: TextStyle(
-          fontFamilyFallback: T.kr,
-          color: c.fg,
-          fontSize: large ? 20 : 12.5,
-          fontWeight: FontWeight.w800,
-          letterSpacing: large ? 2.0 : 0.6,
-          height: 1.1,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_icon(level), size: large ? 16 : 13, color: c.fg),
+          SizedBox(width: large ? 6 : 4),
+          Text(
+            verdictLabel(level),
+            style: TextStyle(
+              fontFamilyFallback: T.kr,
+              color: c.fg,
+              fontSize: large ? 14.5 : 12,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -59,16 +81,16 @@ class InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        border: Border.all(color: T.line),
-        borderRadius: BorderRadius.circular(T.r),
+        color: T.sunken,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontFamilyFallback: T.kr,
-          fontSize: 11.5,
+          fontSize: T.micro,
           color: T.inkSoft,
           height: 1.2,
         ),

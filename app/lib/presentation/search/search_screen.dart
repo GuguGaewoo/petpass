@@ -368,30 +368,58 @@ class _PlaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Material 을 가장 바깥에 두고 카드 배경색을 여기서 칠한다.
-    // 그래야 InkWell 의 탭 물결이 카드 배경 "위에" 그려진다.
+    final c = verdictColors(verdict.level);
+
     return Material(
       color: T.card,
       borderRadius: BorderRadius.circular(T.rCard),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            // color 를 여기 남기면 물결이 다시 가려진다. 테두리만 담당.
-            border: Border.all(color: T.line),
-            borderRadius: BorderRadius.circular(T.rCard),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 사진이 카드의 절반을 차지한다.
+            // 반려동물 여행 서비스에서 글자만 있는 목록은 밋밋하다.
+            SizedBox(
+              height: 150,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  VerdictBadge(verdict.level),
-                  const SizedBox(width: 10),
-                  Expanded(
+                  if (place.image.isNotEmpty)
+                    Image.network(
+                      place.image,
+                      fit: BoxFit.cover,
+                      // 이미지가 없거나 막혀도 레이아웃이 무너지지 않게 한다
+                      errorBuilder: (_, _, _) => const _NoImage(),
+                      loadingBuilder: (ctx, child, p) =>
+                          p == null ? child : const _NoImage(),
+                    )
+                  else
+                    const _NoImage(),
+
+                  // 아래쪽을 어둡게 깔아 흰 글씨가 읽히게 한다
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.center,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Color(0xCC0F231A)],
+                      ),
+                    ),
+                  ),
+
+                  Positioned(
+                    left: 14,
+                    top: 14,
+                    child: VerdictBadge(verdict.level),
+                  ),
+
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 14,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -401,20 +429,21 @@ class _PlaceCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontFamilyFallback: T.kr,
-                            fontSize: 15.5,
+                            fontSize: 19,
                             fontWeight: FontWeight.w700,
-                            color: T.ink,
+                            letterSpacing: -0.4,
+                            color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
-                          '${place.contentType} \u00b7 ${place.address}',
+                          '${place.contentType} \u00b7 ${_shortAddr(place.address)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamilyFallback: T.kr,
-                            fontSize: 12,
-                            color: T.inkSoft,
+                            fontSize: T.caption,
+                            color: Colors.white.withValues(alpha: 0.75),
                           ),
                         ),
                       ],
@@ -422,28 +451,53 @@ class _PlaceCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                verdict.reason,
-                style: TextStyle(
-                  fontFamilyFallback: T.kr,
-                  fontSize: 13.5,
-                  color: verdictColors(verdict.level).fg,
-                  height: 1.4,
-                ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 13, 16, 15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    verdict.reason,
+                    style: TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: T.body,
+                      color: c.fg,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (verdict.chips.isNotEmpty) ...[
+                    const SizedBox(height: 11),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [for (final x in verdict.chips) InfoChip(x)],
+                    ),
+                  ],
+                ],
               ),
-              if (verdict.chips.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 5,
-                  runSpacing: 5,
-                  children: [for (final c in verdict.chips) InfoChip(c)],
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+  /// 전체 주소는 카드에서 너무 길다. 시도 + 시군구까지만 남긴다.
+  static String _shortAddr(String addr) {
+    final parts = addr.split(' ');
+    return parts.length >= 2 ? '${parts[0]} ${parts[1]}' : addr;
+  }
+}
+
+/// 이미지가 없거나 불러오지 못했을 때의 자리.
+class _NoImage extends StatelessWidget {
+  const _NoImage();
+
+  @override
+  Widget build(BuildContext context) => const ColoredBox(
+    color: T.sunken,
+    child: Center(child: Icon(Icons.photo_outlined, size: 26, color: T.mute)),
+  );
 }
