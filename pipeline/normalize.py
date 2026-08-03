@@ -91,6 +91,13 @@ def normalize(rec):
         P.extract_muzzle_if_fierce(cpam) or P.extract_muzzle_if_fierce(etc)
     )
 
+    max_count = P.extract_max_count(cpam) or P.extract_max_count(etc)
+
+    # ── 견종 ──
+    all_breed = P.find_any(cpam, P.ALL_BREED)
+    size_limit = None if all_breed else P.extract_size(cpam)
+    fierce_excluded = P.extract_fierce_excluded(cpam) or P.extract_fierce_excluded(etc)
+
     # 필드 간 모순 해소.
     # acmpyPsblCpam 에 "맹견 제외" 가 있는데 etcAcmpyInfo 에는 "맹견의 경우
     # 입마개" 가 있는 경우가 있다(실측 1건). 후자는 295건에 동일하게 박힌
@@ -98,13 +105,6 @@ def normalize(rec):
     # 맹견이 아예 못 들어가는 곳에서 입마개 조건은 의미가 없다.
     if fierce_excluded:
         muzzle_if_fierce = False
-
-    max_count = P.extract_max_count(cpam) or P.extract_max_count(etc)
-
-    # ── 견종 ──
-    all_breed = P.find_any(cpam, P.ALL_BREED)
-    size_limit = None if all_breed else P.extract_size(cpam)
-    fierce_excluded = P.extract_fierce_excluded(cpam) or P.extract_fierce_excluded(etc)
 
     # ── 준비물 ──
     items, free_use, see_etc = P.extract_need_items(need)
@@ -186,7 +186,7 @@ def normalize(rec):
         "purchasable_items": P.split_items(rec.get("relaPurcPrdlst")),
         "facilities": P.split_items(rec.get("relaPosesFclty")),
         "extra_fee": P.find_any(etc, P.EXTRA_FEE),
-        "outdoor_only": P.find_any(etc, P.OUTDOOR_ONLY),
+        "outdoor_only": P.extract_outdoor_only(etc) or P.extract_outdoor_only(cpam),
         "risk_notes": (rec.get("relaAcdntRiskMtr") or "").strip(),
         "etc_info": etc,
 

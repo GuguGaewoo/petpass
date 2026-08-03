@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
 import '../../core/area_codes.dart';
+import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
 import '../../domain/models/verdict.dart';
@@ -381,77 +382,111 @@ class _PlaceCard extends StatelessWidget {
           children: [
             // 사진이 카드의 절반을 차지한다.
             // 반려동물 여행 서비스에서 글자만 있는 목록은 밋밋하다.
-            SizedBox(
-              height: 150,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (place.image.isNotEmpty)
-                    Image.network(
-                      place.image,
-                      fit: BoxFit.cover,
-                      // 이미지가 없거나 막혀도 레이아웃이 무너지지 않게 한다
-                      errorBuilder: (_, _, _) => const _NoImage(),
-                      loadingBuilder: (ctx, child, p) =>
-                          p == null ? child : const _NoImage(),
-                    )
-                  else
-                    const _NoImage(),
-
-                  // 아래쪽을 어둡게 깔아 흰 글씨가 읽히게 한다
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.center,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0xCC0F231A)],
+            //
+            // 웹에서는 그리지 않는다. TourAPI 이미지 서버가 CORS 헤더를 주지
+            // 않아 브라우저가 전부 차단하는데, 회색 박스만 줄줄이 남는다.
+            if (P.canShowTourImage)
+              SizedBox(
+                height: 150,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (place.image.isNotEmpty)
+                      Image.network(
+                        place.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const _NoImage(),
+                        loadingBuilder: (ctx, child, p) =>
+                            p == null ? child : const _NoImage(),
+                      )
+                    else
+                      const _NoImage(),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.center,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Color(0xCC0F231A)],
+                        ),
                       ),
                     ),
-                  ),
-
-                  Positioned(
-                    left: 14,
-                    top: 14,
-                    child: VerdictBadge(verdict.level),
-                  ),
-
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 14,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          place.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.4,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${place.contentType} \u00b7 ${_shortAddr(place.address)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: T.caption,
-                            color: Colors.white.withValues(alpha: 0.75),
-                          ),
-                        ),
-                      ],
+                    Positioned(
+                      left: 14,
+                      top: 14,
+                      child: VerdictBadge(verdict.level),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 14,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            place.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamilyFallback: T.kr,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.4,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${place.contentType} \u00b7 ${_shortAddr(place.address)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamilyFallback: T.kr,
+                              fontSize: T.caption,
+                              color: Colors.white.withValues(alpha: 0.75),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              // 이미지가 없는 대신 제목과 뱃지를 카드 안에 둔다
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 15, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    VerdictBadge(verdict.level),
+                    const SizedBox(height: 10),
+                    Text(
+                      place.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                        color: T.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${place.contentType} \u00b7 ${_shortAddr(place.address)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: T.caption,
+                        color: T.mute,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 13, 16, 15),

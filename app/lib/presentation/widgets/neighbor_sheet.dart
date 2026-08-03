@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
+import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/neighbor.dart';
 import '../detail/place_detail_screen.dart';
@@ -57,7 +58,7 @@ class _Sheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            if (n.image.isNotEmpty) ...[
+            if (P.canShowTourImage && n.image.isNotEmpty) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(T.rCard),
                 child: Image.network(
