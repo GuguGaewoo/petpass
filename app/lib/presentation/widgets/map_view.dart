@@ -22,6 +22,7 @@ class MapPin {
     required this.lng,
     required this.title,
     this.color = '#1F6F4A',
+    this.isOrigin = false,
   });
 
   final String id;
@@ -31,6 +32,9 @@ class MapPin {
 
   /// 판정 등급별 색상. 갈 수 있는 곳과 없는 곳이 지도에서 구분되게 한다.
   final String color;
+
+  /// 기준 장소인가. 주변 마커와 모양을 달리해 한눈에 구분되게 한다.
+  final bool isOrigin;
 }
 
 class MapView extends StatelessWidget {

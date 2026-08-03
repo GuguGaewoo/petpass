@@ -119,6 +119,7 @@ class _WebMapState extends State<_WebMap> {
             'lng': p.lng,
             'title': p.title,
             'color': p.color,
+            'origin': p.isOrigin,
           },
       ]);
       _jsRender(

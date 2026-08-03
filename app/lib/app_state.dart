@@ -4,8 +4,6 @@
 /// ChangeNotifier 로 충분하며, 의존성이 적을수록 배포가 단순하다.
 library;
 
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,7 +17,6 @@ import 'domain/verdict_engine.dart';
 
 class AppState extends ChangeNotifier {
   static const _savedKey = 'saved_place_ids';
-  static const _petKey = 'pet_profile';
 
   final _repo = PlaceRepository();
   final _engine = const VerdictEngine();
@@ -29,7 +26,13 @@ class AppState extends ChangeNotifier {
   bool _loading = true;
   String? _error;
 
-  /// 프로필은 기기 안에만 둔다. 서버로 보내지 않는다.
+  /// 프로필은 기기 안에만 두고, 앱을 닫으면 사라진다.
+  ///
+  /// 저장하지 않는 이유:
+  ///   한 가정에 여러 마리가 있거나 남의 반려동물을 대신 확인하는 경우가 있어
+  ///   프로필 하나를 자동 저장하면 오히려 틀린 기준으로 판정하게 된다.
+  ///   제대로 하려면 다중 프로필(목록·전환·삭제)이 필요하므로
+  ///   확장 기능으로 미룬다.
   PetProfile? _pet;
 
   /// 저장한 장소. 프로필과 같은 원칙으로 기기 안에만 둔다.
@@ -53,10 +56,6 @@ class AppState extends ChangeNotifier {
     try {
       _prefs = await SharedPreferences.getInstance();
       _saved.addAll(_prefs?.getStringList(_savedKey) ?? const []);
-      final raw = _prefs?.getString(_petKey);
-      if (raw != null) {
-        _pet = PetProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-      }
     } catch (_) {
       // 무시
     }
@@ -66,8 +65,6 @@ class AppState extends ChangeNotifier {
 
   void setPet(PetProfile p) {
     _pet = p;
-    // 프로필도 기기 안에만 둔다. 서버로 보내지 않는다.
-    _prefs?.setString(_petKey, jsonEncode(p.toJson()));
     notifyListeners();
   }
 

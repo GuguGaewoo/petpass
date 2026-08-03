@@ -12,8 +12,6 @@ window.petpassMap = {
 
     this._loading = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      // 파라미터 이름이 ncpKeyId 로 바뀌었다. 문서에 따라 ncpClientId 로
-      // 나온 곳도 있으니, 인증 실패가 나면 그쪽으로 바꿔볼 것.
       s.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + keyId;
       s.onload = () => resolve();
       s.onerror = () => reject(new Error('네이버 지도 스크립트 로드 실패'));
@@ -37,22 +35,47 @@ window.petpassMap = {
     });
 
     const pins = JSON.parse(pinsJson);
+    const bounds = pins.length > 1 ? new naver.maps.LatLngBounds() : null;
+
     for (const p of pins) {
+      const pos = new naver.maps.LatLng(p.lat, p.lng);
+      if (bounds) bounds.extend(pos);
+
+      // 기준 장소는 물방울 모양으로 크게, 주변은 작은 점.
+      // 색은 판정 등급을 나타내므로 형태로 구분한다.
+      // 기준 장소를 빨강으로 칠하면 '불가' 판정과 같은 색이 되어 오독된다.
+      const html = p.origin
+        ? '<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;' +
+          'transform:rotate(-45deg);background:' + p.color + ';' +
+          'border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>'
+        : '<div style="width:14px;height:14px;border-radius:50%;' +
+          'background:' + p.color + ';border:2px solid #fff;' +
+          'box-shadow:0 1px 3px rgba(0,0,0,.4)"></div>';
+
+      // 물방울은 뾰족한 끝이 좌표를 가리키도록 앵커를 아래로 둔다
+      const ax = p.origin ? 13 : 7;
+      const ay = p.origin ? 26 : 7;
+
       const marker = new naver.maps.Marker({
-        position: new naver.maps.LatLng(p.lat, p.lng),
+        position: pos,
         map: map,
         title: p.title,
+        // 기준 장소를 위에 그려 주변 마커에 가려지지 않게 한다
+        zIndex: p.origin ? 100 : 1,
         icon: {
-          content:
-            '<div style="width:14px;height:14px;border-radius:50%;' +
-            'background:' + p.color + ';border:2px solid #fff;' +
-            'box-shadow:0 1px 3px rgba(0,0,0,.4)"></div>',
-          anchor: new naver.maps.Point(7, 7),
+          content: html,
+          anchor: new naver.maps.Point(ax, ay),
         },
       });
-      if (onTap) {
+
+      if (onTap && !p.origin) {
         naver.maps.Event.addListener(marker, 'click', () => onTap(p.id));
       }
+    }
+
+    // 마커가 여러 개면 전부 보이도록 화면을 맞춘다.
+    if (bounds) {
+      map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
     }
   },
 };

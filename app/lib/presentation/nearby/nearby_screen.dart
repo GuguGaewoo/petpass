@@ -13,7 +13,9 @@ import '../../app_state.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/neighbor.dart';
 import '../../domain/models/place_constraint.dart';
+import '../../domain/models/verdict.dart';
 import '../../domain/nearby_recommender.dart';
+import '../widgets/map_view.dart';
 import '../widgets/neighbor_sheet.dart';
 import '../widgets/verdict_badge.dart';
 
@@ -133,6 +135,32 @@ class _NearbyScreenState extends State<NearbyScreen> {
           ),
         ),
 
+        // 지도. 기준 장소와 추천 장소를 함께 찍어 거리를 눈으로 알 수 있게 한다.
+        if (widget.place.lat != null && widget.place.lng != null) ...[
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(T.rCard),
+            child: SizedBox(
+              height: 260,
+              child: MapView(
+                lat: widget.place.lat!,
+                lng: widget.place.lng!,
+                pins: _pins(n),
+                onPinTap: (id) => _openById(id, n),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '큰 물방울이 현재 보고 있는 장소입니다 · 색은 판정 등급',
+            style: TextStyle(
+              fontFamilyFallback: T.kr,
+              fontSize: 11.5,
+              color: T.mute,
+            ),
+          ),
+        ],
+
         if (n.itemsToBring.isNotEmpty) ...[
           const SizedBox(height: 18),
           _label('함께 챙길 것'),
@@ -178,6 +206,54 @@ class _NearbyScreenState extends State<NearbyScreen> {
         ),
       ],
     );
+  }
+
+  /// 기준 장소 + 추천 장소를 마커로 만든다.
+  List<MapPin> _pins(Nearby n) {
+    final out = <MapPin>[
+      MapPin(
+        id: widget.place.contentId,
+        lat: widget.place.lat!,
+        lng: widget.place.lng!,
+        title: widget.place.title,
+        color: '#171B18',
+        isOrigin: true,
+      ),
+    ];
+    for (final sec in n.sections) {
+      for (final p in sec.places) {
+        out.add(
+          MapPin(
+            id: p.neighbor.contentId,
+            lat: p.neighbor.lat,
+            lng: p.neighbor.lng,
+            title: p.neighbor.title,
+            // 판정이 있는 곳만 등급 색을 쓴다.
+            // 근거 없는 곳에 색을 부여하면 판정한 것처럼 읽힌다.
+            color: switch (p.verdict?.level) {
+              VerdictLevel.possible => '#1F6F4A',
+              VerdictLevel.conditional => '#9A6209',
+              VerdictLevel.impossible => '#A32F2A',
+              VerdictLevel.unknown => '#6E7671',
+              null => '#9BA39D',
+            },
+          ),
+        );
+      }
+    }
+    return out;
+  }
+
+  /// 마커를 눌렀을 때 해당 장소의 시트를 띄운다.
+  void _openById(String id, Nearby n) {
+    for (final sec in n.sections) {
+      for (final p in sec.places) {
+        if (p.neighbor.contentId == id) {
+          _open(p.neighbor);
+          return;
+        }
+      }
+    }
   }
 
   /// 간단 정보를 바텀시트로 띄운다.
