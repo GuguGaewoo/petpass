@@ -26,3 +26,5 @@ app/android/.gradle/
 .idea/
 .vscode/
 _tmp/
+app/keys/
+app/android/key.properties
