@@ -18,6 +18,9 @@ import 'map_view.dart';
 @JS('petpassMap.load')
 external JSPromise<JSAny?> _jsLoad(String keyId);
 
+@JS('petpassMap.destroy')
+external void _jsDestroy(String elId);
+
 @JS('petpassMap.render')
 external void _jsRender(
   String elId,
@@ -29,6 +32,32 @@ external void _jsRender(
 );
 
 int _seq = 0;
+
+/// 뷰 타입은 한 번만 등록한다.
+///
+/// registerViewFactory 로 등록한 타입은 해제할 방법이 없다.
+/// 화면을 열 때마다 새 타입을 등록하면 그만큼 쌓이고,
+/// 콘솔에 Platform View 경고가 계속 늘어난다.
+///
+/// 대신 팩토리가 매번 새 div 를 만들고 그 id 를 파라미터로 받는다.
+const _viewType = 'petpass-map-view';
+bool _registered = false;
+
+void _registerOnce() {
+  if (_registered) {
+    return;
+  }
+  _registered = true;
+  ui_web.platformViewRegistry.registerViewFactory(_viewType, (
+    int id, {
+    Object? params,
+  }) {
+    final div = web.document.createElement('div') as web.HTMLDivElement;
+    div.id = (params as Map?)?['elId'] as String? ?? 'petpass-map-$id';
+    div.className = 'petpass-map';
+    return div;
+  });
+}
 
 Widget buildMap({
   required double lat,
@@ -85,18 +114,12 @@ class _WebMap extends StatefulWidget {
 
 class _WebMapState extends State<_WebMap> {
   late final String _elId = 'petpass-map-${_seq++}';
-  late final String _viewType = 'petpass-map-view-$_elId';
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    ui_web.platformViewRegistry.registerViewFactory(_viewType, (int _) {
-      final div = web.document.createElement('div') as web.HTMLDivElement;
-      div.id = _elId;
-      div.className = 'petpass-map';
-      return div;
-    });
+    _registerOnce();
     _init();
   }
 
@@ -140,10 +163,22 @@ class _WebMapState extends State<_WebMap> {
   }
 
   @override
+  void dispose() {
+    // 지도 인스턴스와 DOM 노드를 함께 치운다.
+    // 상세 화면을 여러 번 열면 플랫폼 뷰가 쌓여 메모리를 먹는다.
+    _jsDestroy(_elId);
+    web.document.getElementById(_elId)?.remove();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_error != null) {
       return _fallback(_error!);
     }
-    return HtmlElementView(viewType: _viewType);
+    return HtmlElementView(
+      viewType: _viewType,
+      creationParams: {'elId': _elId},
+    );
   }
 }

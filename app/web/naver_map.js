@@ -5,6 +5,9 @@
 window.petpassMap = {
   _loading: null,
 
+  // elId -> 지도 인스턴스. 화면을 떠날 때 파기하기 위해 보관한다.
+  _maps: {},
+
   // 스크립트를 한 번만 불러온다. 여러 지도를 띄워도 중복 로드하지 않는다.
   load(keyId) {
     if (window.naver && window.naver.maps) return Promise.resolve();
@@ -21,9 +24,20 @@ window.petpassMap = {
   },
 
   // elId 요소에 지도를 그린다.
+  // 화면을 떠날 때 호출한다. 지도 인스턴스가 쌓이면 메모리를 먹는다.
+  destroy(elId) {
+    const map = this._maps[elId];
+    if (map) {
+      map.destroy();
+      delete this._maps[elId];
+    }
+  },
+
   render(elId, lat, lng, zoom, pinsJson, onTap) {
     const el = document.getElementById(elId);
     if (!el) return;
+
+    if (this._maps[elId]) this._maps[elId].destroy();
 
     const map = new naver.maps.Map(el, {
       center: new naver.maps.LatLng(lat, lng),
@@ -33,6 +47,8 @@ window.petpassMap = {
       scaleControl: true,
       logoControl: true,
     });
+
+    this._maps[elId] = map;
 
     const pins = JSON.parse(pinsJson);
     const bounds = pins.length > 1 ? new naver.maps.LatLngBounds() : null;
