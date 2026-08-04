@@ -1,13 +1,14 @@
 /// 판정 상세 — 이 앱의 결론이 나오는 화면.
 ///
-/// 확인증 형식을 취한다. 도장(판정) 아래에 대조 대상(반려동물), 사유,
-/// 준비물, 그리고 하단에 근거 원문과 데이터 최종수정일을 작은 글씨로 둔다.
-/// 근거와 갱신일을 함께 노출하는 것은 이 서비스의 설계 원칙이다.
+/// 상단에 사진과 판정을 얹고, 그 아래에 근거를 쌓는다.
+/// 판정 사유, 준비물, 근거 원문, 데이터 최종수정일을 함께 노출하는 것이
+/// 이 서비스의 설계 원칙이다.
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
+import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
 import '../../domain/models/verdict.dart';
@@ -37,6 +38,14 @@ class PlaceDetailScreen extends StatelessWidget {
     'etcAcmpyInfo': '기타 동반 정보',
   };
 
+  /// 판정 등급별 지도 마커 색. 화면 뱃지와 같은 언어를 쓴다.
+  static String _pinColor(VerdictLevel l) => switch (l) {
+    VerdictLevel.possible => '#0F6E56',
+    VerdictLevel.conditional => '#B07A1F',
+    VerdictLevel.impossible => '#A85248',
+    VerdictLevel.unknown => '#8C857E',
+  };
+
   @override
   Widget build(BuildContext context) {
     final v = state.judge(place);
@@ -45,112 +54,66 @@ class PlaceDetailScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: T.paper,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.arrow_back, size: 20),
-                      color: T.inkSoft,
-                    ),
-                    const Spacer(),
-                    // 저장은 기기 안에만 기록한다. 프로필과 같은 원칙이다.
-                    ListenableBuilder(
-                      listenable: state,
-                      builder: (context, _) {
-                        final on = state.isSaved(place.contentId);
-                        return IconButton(
-                          onPressed: () => state.toggleSaved(place.contentId),
-                          icon: Icon(
-                            on ? Icons.star : Icons.star_border,
-                            size: 22,
-                            color: on ? T.hold : T.inkSoft,
-                          ),
-                          tooltip: on ? '저장 해제' : '저장',
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                Text(
-                  place.title,
-                  style: const TextStyle(
-                    fontFamilyFallback: T.kr,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    color: T.ink,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${place.contentType} · ${place.address}',
-                  style: const TextStyle(
-                    fontFamilyFallback: T.kr,
-                    fontSize: 13,
-                    color: T.inkSoft,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 20),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ListView(
+            // 사진이 화면 최상단까지 닿아야 한다. 좌우 여백은 항목마다 준다.
+            padding: const EdgeInsets.only(bottom: 40),
+            children: [
+              _Header(state: state, place: place, verdict: v),
 
-                // ── 확인증 ──
-                Container(
+              // ── 확인증 ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Container(
                   decoration: BoxDecoration(
                     color: T.card,
-                    border: Border.all(color: c.fg.withValues(alpha: 0.35)),
+                    border: Border.all(color: T.line),
                     borderRadius: BorderRadius.circular(T.rCard),
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: c.bg,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(T.rCard),
-                          ),
-                        ),
+                        color: c.bg,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             VerdictBadge(v.level, large: true),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 14),
                             Text(
                               v.reason,
                               style: TextStyle(
                                 fontFamilyFallback: T.kr,
-                                fontSize: 15,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: c.fg,
                                 height: 1.5,
                               ),
                             ),
                             if (pet != null) ...[
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 12),
                               Text(
-                                '대조 기준  ${pet.name} · ${pet.weightKg.toStringAsFixed(1)}kg · ${pet.size.label}'
-                                '${pet.isGuideDog ? ' · 보조견' : ''}',
+                                '${pet.name} · ${pet.weightKg.toStringAsFixed(1)}kg · ${pet.size.label}'
+                                '${pet.isFierce ? ' · 맹견' : ''}'
+                                '${pet.isGuideDog ? ' · 보조견' : ''} 기준',
                                 style: T.mono.copyWith(
                                   fontSize: 11.5,
-                                  color: c.fg.withValues(alpha: 0.8),
+                                  color: c.fg.withValues(alpha: 0.75),
                                 ),
                               ),
                             ],
                           ],
                         ),
                       ),
+
                       if (v.chips.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
                           child: Wrap(
                             spacing: 6,
                             runSpacing: 6,
@@ -162,7 +125,7 @@ class PlaceDetailScreen extends StatelessWidget {
                       if (v.itemsToBring.isNotEmpty ||
                           v.baselineItems.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -182,13 +145,12 @@ class PlaceDetailScreen extends StatelessWidget {
                       // ── 구역 원문 ──
                       if (v.zoneNote.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: T.paper,
-                              border: Border.all(color: T.line),
+                              color: T.sunken,
                               borderRadius: BorderRadius.circular(T.r),
                             ),
                             child: Column(
@@ -199,7 +161,7 @@ class PlaceDetailScreen extends StatelessWidget {
                                   v.zoneNote,
                                   style: const TextStyle(
                                     fontFamilyFallback: T.kr,
-                                    fontSize: 13,
+                                    fontSize: 13.5,
                                     color: T.ink,
                                     height: 1.6,
                                   ),
@@ -211,7 +173,7 @@ class PlaceDetailScreen extends StatelessWidget {
 
                       if (place.riskNotes.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -220,7 +182,7 @@ class PlaceDetailScreen extends StatelessWidget {
                                 place.riskNotes,
                                 style: const TextStyle(
                                   fontFamilyFallback: T.kr,
-                                  fontSize: 13,
+                                  fontSize: 13.5,
                                   color: T.ink,
                                   height: 1.6,
                                 ),
@@ -231,7 +193,7 @@ class PlaceDetailScreen extends StatelessWidget {
 
                       if (place.facilities.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -240,7 +202,7 @@ class PlaceDetailScreen extends StatelessWidget {
                                 place.facilities.join(', '),
                                 style: const TextStyle(
                                   fontFamilyFallback: T.kr,
-                                  fontSize: 13,
+                                  fontSize: 13.5,
                                   color: T.ink,
                                   height: 1.6,
                                 ),
@@ -249,66 +211,65 @@ class PlaceDetailScreen extends StatelessWidget {
                           ),
                         ),
 
-                      // ── 근거 ──
+                      // ── 근거 원문 ──
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
                         child: Theme(
                           data: Theme.of(
                             context,
                           ).copyWith(dividerColor: Colors.transparent),
                           child: Material(
-                            color: Colors
-                                .transparent, // 투명이어야 부모 Container 배경색이 보인다
-                            child: Material(
-                              color: Colors
-                                  .transparent, // 투명이어야 바깥 Container 배경색이 보인다
-                              child: ExpansionTile(
-                                tilePadding: EdgeInsets.zero,
-                                childrenPadding: const EdgeInsets.only(
-                                  bottom: 12,
-                                ),
-                                title: Text(
-                                  '판정 근거 원문',
-                                  style: TextStyle(
-                                    fontFamilyFallback: T.kr,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: T.inkSoft,
-                                  ),
-                                ),
-                                children: [
-                                  for (final e in place.sourceText.entries)
-                                    if (e.value.trim().isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 10,
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _fieldNames[e.key] ?? e.key,
-                                              style: T.mono.copyWith(
-                                                fontSize: 10.5,
-                                                color: T.mute,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              e.value,
-                                              style: const TextStyle(
-                                                fontFamilyFallback: T.kr,
-                                                fontSize: 13,
-                                                color: T.ink,
-                                                height: 1.6,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                ],
+                            // 투명이어야 부모 Container 배경색이 보인다
+                            color: Colors.transparent,
+                            child: ExpansionTile(
+                              tilePadding: EdgeInsets.zero,
+                              // 기본값이 center 라 필드명과 원문이 가운데로 몰린다
+                              expandedCrossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              childrenPadding: const EdgeInsets.only(
+                                bottom: 12,
                               ),
+                              title: const Text(
+                                '판정 근거 원문',
+                                style: TextStyle(
+                                  fontFamilyFallback: T.kr,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: T.inkSoft,
+                                ),
+                              ),
+                              children: [
+                                for (final e in place.sourceText.entries)
+                                  if (e.value.trim().isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _fieldNames[e.key] ?? e.key,
+                                            style: T.mono.copyWith(
+                                              fontSize: 10.5,
+                                              color: T.mute,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            e.value,
+                                            style: const TextStyle(
+                                              fontFamilyFallback: T.kr,
+                                              fontSize: 13.5,
+                                              color: T.ink,
+                                              height: 1.6,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              ],
                             ),
                           ),
                         ),
@@ -316,8 +277,9 @@ class PlaceDetailScreen extends StatelessWidget {
 
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
                         decoration: const BoxDecoration(
+                          color: T.sunken,
                           border: Border(top: BorderSide(color: T.line)),
                         ),
                         child: Column(
@@ -332,7 +294,7 @@ class PlaceDetailScreen extends StatelessWidget {
                                 color: T.inkSoft,
                               ),
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 4),
                             const Text(
                               '출처 한국관광공사 TourAPI · 방문 전 현장 확인을 권장합니다',
                               style: TextStyle(
@@ -348,11 +310,13 @@ class PlaceDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
 
-                // 지도. 좌표가 없는 장소는 표시하지 않는다.
-                if (place.lat != null && place.lng != null) ...[
-                  const SizedBox(height: 20),
-                  ClipRRect(
+              // ── 지도 ──
+              if (place.lat != null && place.lng != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(T.rCard),
                     child: SizedBox(
                       height: 200,
@@ -366,24 +330,34 @@ class PlaceDetailScreen extends StatelessWidget {
                             lat: place.lat!,
                             lng: place.lng!,
                             title: place.title,
-                            // 판정 등급으로 색을 나눈다.
-                            // 지도만 보고도 갈 수 있는 곳인지 드러나게 한다.
-                            color: switch (v.level) {
-                              VerdictLevel.possible => '#1F6F4A',
-                              VerdictLevel.conditional => '#9A6209',
-                              VerdictLevel.impossible => '#A32F2A',
-                              VerdictLevel.unknown => '#6E7671',
-                            },
+                            color: _pinColor(v.level),
+                            isOrigin: true,
                           ),
                         ],
                       ),
                     ),
                   ),
-                ],
+                ),
 
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 50,
+              if (place.tel.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.call_outlined, size: 16, color: T.mute),
+                      const SizedBox(width: 7),
+                      Text(
+                        place.tel,
+                        style: T.mono.copyWith(fontSize: 13.5, color: T.ink),
+                      ),
+                    ],
+                  ),
+                ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                child: SizedBox(
+                  height: 54,
                   child: FilledButton.icon(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
@@ -391,32 +365,26 @@ class PlaceDetailScreen extends StatelessWidget {
                             NearbyScreen(state: state, place: place),
                       ),
                     ),
-                    icon: const Icon(Icons.explore_outlined, size: 18),
+                    icon: const Icon(Icons.explore_outlined, size: 19),
                     label: const Text(
                       '주변에 함께 갈 곳 보기',
                       style: TextStyle(
                         fontFamilyFallback: T.kr,
-                        fontSize: 15,
+                        fontSize: 15.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: T.ink,
+                      backgroundColor: T.brand,
+                      foregroundColor: T.onBrand,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(T.r),
+                        borderRadius: BorderRadius.circular(T.rCard),
                       ),
                     ),
                   ),
                 ),
-                if (place.tel.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    '전화  ${place.tel}',
-                    style: T.mono.copyWith(fontSize: 13, color: T.ink),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -427,41 +395,41 @@ class PlaceDetailScreen extends StatelessWidget {
       '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
 
   Widget _sectionLabel(String s) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.only(bottom: 9),
     child: Text(
       s,
       style: const TextStyle(
         fontFamilyFallback: T.kr,
         fontSize: 11.5,
         fontWeight: FontWeight.w700,
-        color: T.inkSoft,
-        letterSpacing: 0.5,
+        color: T.mute,
+        letterSpacing: 0.4,
       ),
     ),
   );
 
   Widget _item(String name, {bool emphasized = false, String? note}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 7),
       child: Row(
         children: [
           Icon(
             emphasized ? Icons.check_box_outline_blank : Icons.check,
-            size: 16,
+            size: 17,
             color: emphasized ? T.ink : T.mute,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 9),
           Text(
             name,
             style: TextStyle(
               fontFamilyFallback: T.kr,
-              fontSize: 14,
+              fontSize: 14.5,
               fontWeight: emphasized ? FontWeight.w600 : FontWeight.w400,
               color: emphasized ? T.ink : T.inkSoft,
             ),
           ),
           if (note != null) ...[
-            const SizedBox(width: 6),
+            const SizedBox(width: 7),
             Text(
               note,
               style: const TextStyle(
@@ -473,6 +441,189 @@ class PlaceDetailScreen extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// 상단 헤더.
+///
+/// 앱에서는 사진 위에 제목을 얹고, 웹에서는 사진 없이 텍스트만 둔다.
+/// TourAPI 이미지 서버가 CORS 헤더를 주지 않아 브라우저가 차단하기 때문이다.
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.state,
+    required this.place,
+    required this.verdict,
+  });
+
+  final AppState state;
+  final PlaceConstraint place;
+  final Verdict verdict;
+
+  @override
+  Widget build(BuildContext context) {
+    final withImage = P.canShowTourImage && place.image.isNotEmpty;
+
+    if (!withImage) {
+      return SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _bar(context, onImage: false),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      place.title,
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        color: T.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '${place.contentType} · ${place.address}',
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 13,
+                        color: T.mute,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 280,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            place.image,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => const ColoredBox(color: T.sunken),
+            loadingBuilder: (ctx, child, p) =>
+                p == null ? child : const ColoredBox(color: T.sunken),
+          ),
+          // 위아래를 어둡게 깔아 아이콘과 글씨가 읽히게 한다
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x730F231A),
+                  Color(0x1A0F231A),
+                  Color(0xE60F231A),
+                ],
+                stops: [0, 0.4, 1],
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: _bar(context, onImage: true),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 22,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  place.title,
+                  style: const TextStyle(
+                    fontFamilyFallback: T.kr,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
+                    color: Colors.white,
+                    height: 1.25,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${place.contentType} · ${place.address}',
+                  style: TextStyle(
+                    fontFamilyFallback: T.kr,
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bar(BuildContext context, {required bool onImage}) {
+    final fg = onImage ? Colors.white : T.inkSoft;
+    return Row(
+      children: [
+        _circle(
+          onImage: onImage,
+          child: IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(Icons.arrow_back, size: 20, color: fg),
+          ),
+        ),
+        const Spacer(),
+        // 저장은 기기 안에만 기록한다. 프로필과 같은 원칙이다.
+        ListenableBuilder(
+          listenable: state,
+          builder: (context, _) {
+            final on = state.isSaved(place.contentId);
+            return _circle(
+              onImage: onImage,
+              child: IconButton(
+                onPressed: () => state.toggleSaved(place.contentId),
+                icon: Icon(
+                  on ? Icons.star_rounded : Icons.star_border_rounded,
+                  size: 23,
+                  color: on ? T.hold : fg,
+                ),
+                tooltip: on ? '저장 해제' : '저장',
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 사진 위에서는 아이콘이 배경에 묻히므로 반투명 원을 깐다.
+  Widget _circle({required bool onImage, required Widget child}) {
+    if (!onImage) {
+      return child;
+    }
+    return Container(
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.28),
+        shape: BoxShape.circle,
+      ),
+      child: child,
     );
   }
 }

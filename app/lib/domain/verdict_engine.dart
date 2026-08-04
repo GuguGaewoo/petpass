@@ -42,7 +42,9 @@ class VerdictEngine {
     };
     final baseline = all.where(baselineItems.contains).toList();
     final extra = all.where((i) => !baselineItems.contains(i)).toList();
-    final zoneNote = p.acmpyType == AcmpyType.partialArea ? p.etcInfo : '';
+    final zoneNote = p.acmpyType == AcmpyType.partialArea
+        ? _zoneNoteOf(p.etcInfo)
+        : '';
 
     Verdict make(VerdictLevel level, String reason, {List<String>? items}) =>
         Verdict(
@@ -139,6 +141,25 @@ class VerdictEngine {
     return make(VerdictLevel.possible, '별도 제약이 없습니다');
   }
 
+  /// 구역 안내에서 이미 구조화된 조건 줄을 걷어낸다.
+  ///
+  /// etcAcmpyInfo 에는 "맹견의 경우 입마개 착용 필수" 같은 조건이 섞여 있는데,
+  /// 이건 이미 준비물로 뽑아 화면에 표시하고 있다. 원문을 그대로 두면
+  /// 준비물에는 입마개가 있는데 안내에는 "맹견의 경우"라고 적혀 있어,
+  /// 소형견 보호자가 자기는 해당 없다고 오해할 수 있다.
+  ///
+  /// 무조건 요구(acmpyNeedMtr)와 조건부 요구(etcAcmpyInfo)가 같은 품목일 때
+  /// 특히 위험하다. 실제로 두 필드가 모두 입마개를 요구하는 장소가 있다.
+  static String _zoneNoteOf(String etc) {
+    const drop = ['입마개', '배변봉투', '배변 봉투', '목줄'];
+    final lines = etc
+        .split('\n')
+        .where((l) => l.trim().isNotEmpty)
+        .where((l) => !drop.any(l.contains))
+        .toList();
+    return lines.join('\n');
+  }
+
   List<String> _buildChips(PlaceConstraint p) {
     final out = <String>[];
     if (p.acmpyType == AcmpyType.partialArea) out.add('구역 제한');
@@ -147,8 +168,12 @@ class VerdictEngine {
     if (p.fierceExcluded) out.add('맹견 제외');
     if (p.maxCount != null) out.add('최대 ${p.maxCount}마리');
     if (p.muzzleOverKg != null) out.add('${_kg(p.muzzleOverKg!)}kg↑ 입마개');
-    if (p.muzzleIfFierce) out.add('맹견 입마개');
-    if (p.extraFee) out.add('추가 요금');
+    // 이미 무조건 입마개를 요구하는 곳이면 '맹견 입마개' 칩을 붙이지 않는다.
+    // 모든 개가 써야 하는데 조건부처럼 보이면, 맹견이 아닌 보호자가
+    // 자기는 해당 없다고 오해한다.
+    if (p.muzzleIfFierce && !p.requiredItems.contains('입마개')) {
+      out.add('맹견 입마개');
+    }
     if (p.outdoorOnly) out.add('야외만');
     return out;
   }
