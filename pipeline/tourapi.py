@@ -20,12 +20,12 @@ from urllib.parse import unquote
 import requests
 
 # ── 엔드포인트 (probe 로 확인 완료) ─────────────────
-PET_BASE = "http://apis.data.go.kr/B551011/KorPetTourService2"
+PET_BASE = "https://apis.data.go.kr/B551011/KorPetTourService2"
 PET_OP_AREA = "areaBasedList2"
 PET_OP_DETAIL = "detailPetTour2"
 
-KOR_BASE = "http://apis.data.go.kr/B551011/KorService2"
-ENG_BASE = "http://apis.data.go.kr/B551011/EngService2"
+KOR_BASE = "https://apis.data.go.kr/B551011/KorService2"
+ENG_BASE = "https://apis.data.go.kr/B551011/EngService2"
 
 COMMON = {"MobileOS": "ETC", "MobileApp": "PetPass", "_type": "json"}
 ARRANGE = "A"          # 제목순. 오류나면 "" 로 비울 것

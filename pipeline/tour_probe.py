@@ -79,12 +79,12 @@ def require_key():
 _RAW_KEY = os.getenv("TOUR_API_KEY", "")
 SERVICE_KEY = unquote(_RAW_KEY) if "%" in _RAW_KEY else _RAW_KEY
 
-PET_BASE = "http://apis.data.go.kr/B551011/KorPetTourService2"
+PET_BASE = "https://apis.data.go.kr/B551011/KorPetTourService2"
 PET_OP_AREA = "areaBasedList2"
 PET_OP_DETAIL = "detailPetTour2"
 
-KOR_BASE = "http://apis.data.go.kr/B551011/KorService2"
-ENG_BASE = "http://apis.data.go.kr/B551011/EngService2"
+KOR_BASE = "https://apis.data.go.kr/B551011/KorService2"
+ENG_BASE = "https://apis.data.go.kr/B551011/EngService2"
 
 COMMON = {"MobileOS": "ETC", "MobileApp": "PetPass", "_type": "json"}
 ARRANGE = "A"                     # 정렬. 오류나면 "" 로 비우세요
@@ -164,8 +164,8 @@ def load_json(path, default):
 
 # ─────────────────────────────────────────────────────────────
 def probe():
-    bases = ["http://apis.data.go.kr/B551011/KorPetTourService",
-             "http://apis.data.go.kr/B551011/KorPetTourService2"]
+    bases = ["https://apis.data.go.kr/B551011/KorPetTourService",
+             "https://apis.data.go.kr/B551011/KorPetTourService2"]
     ops = ["areaBasedList", "areaBasedList2", "locationBasedList",
            "locationBasedList2", "detailPetTour", "detailPetTour2"]
     for b in bases:
