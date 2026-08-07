@@ -39,6 +39,8 @@ class PlaceConstraint {
     this.lng,
     this.tel = '',
     this.image = '',
+    this.overview = '',
+    this.homepage = '',
     this.hasDetail = false,
     this.acmpyType,
     this.guideDogOnly = false,
@@ -77,6 +79,12 @@ class PlaceConstraint {
   final double? lng;
   final String tel;
   final String image;
+
+  /// 국문 관광정보의 장소 개요. 실측 채움률 94%.
+  final String overview;
+
+  /// 홈페이지 URL. 원본은 HTML 앵커 태그라 파이프라인에서 URL 만 추출한다.
+  final String homepage;
 
   final bool hasDetail;
   final AcmpyType? acmpyType;
