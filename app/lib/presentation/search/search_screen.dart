@@ -407,7 +407,7 @@ class _PlaceCard extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.center,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Color(0xCC0F231A)],
+                          colors: [Colors.transparent, Color(0xF20F231A)],
                         ),
                       ),
                     ),

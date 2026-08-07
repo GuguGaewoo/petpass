@@ -143,6 +143,8 @@ class PlaceConstraint {
     lng: (j['lng'] as num?)?.toDouble(),
     tel: j['tel'] as String? ?? '',
     image: j['image'] as String? ?? '',
+    overview: j['overview'] as String? ?? '',
+    homepage: j['homepage'] as String? ?? '',
     hasDetail: j['has_detail'] as bool? ?? false,
     acmpyType: AcmpyType.parse(j['acmpy_type'] as String?),
     guideDogOnly: j['guide_dog_only'] as bool? ?? false,
