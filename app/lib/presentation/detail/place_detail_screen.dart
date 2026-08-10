@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app_state.dart';
 import '../../core/platform.dart';
@@ -339,18 +340,46 @@ class PlaceDetailScreen extends StatelessWidget {
                   ),
                 ),
 
-              if (place.tel.isNotEmpty)
+              // 장소 개요. 국문 관광정보에서 가져온다(실측 94%).
+              // 판정 아래에 두는 이유는 이 앱을 여는 이유가 "갈 수 있나"이기 때문이다.
+              // 개요는 그다음에 읽는 보조 정보다.
+              if (place.overview.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.call_outlined, size: 16, color: T.mute),
-                      const SizedBox(width: 7),
-                      Text(
-                        place.tel,
-                        style: T.mono.copyWith(fontSize: 13.5, color: T.ink),
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+                  child: _Overview(text: place.overview),
+                ),
+
+              if (place.homepage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                  child: InkWell(
+                    onTap: () => _openUrl(place.homepage),
+                    borderRadius: BorderRadius.circular(T.r),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.language_outlined,
+                            size: 16,
+                            color: T.go,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              place.homepage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamilyFallback: T.kr,
+                                fontSize: 13,
+                                color: T.go,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
 
@@ -442,6 +471,16 @@ class PlaceDetailScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 홈페이지를 브라우저로 연다.
+  /// url_launcher 를 쓰지 않고 최소한으로 처리한다.
+  static Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 
@@ -624,6 +663,75 @@ class _Header extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: child,
+    );
+  }
+}
+
+/// 장소 개요. 길면 접어서 보여준다.
+///
+/// 실측 중앙값이 322자, 최대 1629자다. 전부 펼쳐두면 판정보다
+/// 개요가 화면을 더 차지하게 되므로 기본은 4줄로 접는다.
+class _Overview extends StatefulWidget {
+  const _Overview({required this.text});
+
+  final String text;
+
+  @override
+  State<_Overview> createState() => _OverviewState();
+}
+
+class _OverviewState extends State<_Overview> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // 짧은 개요는 접을 이유가 없다
+    final short = widget.text.length <= 120;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          maxLines: (_open || short) ? null : 4,
+          overflow: (_open || short)
+              ? TextOverflow.visible
+              : TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontFamilyFallback: T.kr,
+            fontSize: 14,
+            color: T.inkSoft,
+            height: 1.7,
+          ),
+        ),
+        if (!short)
+          GestureDetector(
+            onTap: () => setState(() => _open = !_open),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _open ? '접기' : '더 보기',
+                    style: const TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: T.mute,
+                    ),
+                  ),
+                  Icon(
+                    _open ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: T.mute,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
