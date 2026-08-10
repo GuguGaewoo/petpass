@@ -18,10 +18,12 @@ class Env {
   /// 허용하고 조회 정책을 두지 않았으므로, 키를 가져도 남의 제보를
   /// 읽거나 지울 수 없다.
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+  );
 
   /// 제보 기능을 쓸 수 있는가.
   /// 키가 없으면 제보 버튼을 노출하지 않는다. 핵심 기능은 영향받지 않는다.
   static bool get hasReportBackend =>
-      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+      supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
 }

@@ -27,6 +27,49 @@ enum ReportKind {
   final String hint;
 }
 
+/// 장소별 제보 집계.
+///
+/// 본문은 읽지 않는다. 검증되지 않은 텍스트를 그대로 노출하면
+/// 잘못된 정보가 퍼지고, 악의적 입력을 걸러낼 수단이 없다.
+/// 대신 이용자가 고른 선택지를 집계해 한 문장으로 만든다.
+class ReportSummary {
+  const ReportSummary({
+    required this.total,
+    required this.accurate,
+    required this.outdated,
+    required this.wrong,
+  });
+
+  final int total;
+  final int accurate;
+  final int outdated;
+  final int wrong;
+
+  /// 화면에 보여줄 한 줄. 가장 많이 선택된 유형을 기준으로 쓴다.
+  String get line {
+    if (total == 0) {
+      return '';
+    }
+    final off = outdated + wrong;
+    if (off == 0) {
+      return total == 1
+          ? '방문한 이용자가 판정이 정확했다고 알렸습니다'
+          : '방문한 $total명 모두 판정이 정확했다고 알렸습니다';
+    }
+    if (accurate == 0 && total == off) {
+      final what = wrong >= outdated ? '실제와 다르다고' : '최신이 아니라고';
+      return total == 1
+          ? '방문한 이용자가 정보가 $what 알렸습니다'
+          : '방문한 $total명 모두 정보가 $what 알렸습니다';
+    }
+    final what = wrong >= outdated ? '실제와 다르다고' : '최신이 아니라고';
+    return '방문한 $total명 중 $off명이 정보가 $what 알렸습니다';
+  }
+
+  /// 주의를 요하는가. 화면에서 강조 여부를 정한다.
+  bool get needsCaution => outdated + wrong > accurate;
+}
+
 class ReportRepository {
   static const _deviceKey = 'device_hash';
 
@@ -38,10 +81,14 @@ class ReportRepository {
     if (!Env.hasReportBackend) {
       return;
     }
+    // ignore: avoid_print
+    print(
+      '[제보] 키 확인: ${Env.supabasePublishableKey.length}자, 앞 6자=${Env.supabasePublishableKey.isEmpty ? "(비어있음)" : Env.supabasePublishableKey.substring(0, 6)}',
+    );
     try {
       await Supabase.initialize(
         url: Env.supabaseUrl,
-        publishableKey: Env.supabaseAnonKey,
+        publishableKey: Env.supabasePublishableKey,
       );
       _ready = true;
     } catch (_) {
@@ -92,22 +139,28 @@ class ReportRepository {
     }
   }
 
-  /// 장소별 제보 건수. 본문은 읽지 않는다.
-  /// 실패하면 null 을 반환하고 화면은 건수를 표시하지 않는다.
-  Future<int?> countOf(String contentId) async {
+  /// 장소별 제보 집계. 본문은 읽지 않는다.
+  /// 실패하면 null 을 반환하고 화면은 아무것도 표시하지 않는다.
+  Future<ReportSummary?> summaryOf(String contentId) async {
     if (!_ready) {
       return null;
     }
     try {
       final rows = await Supabase.instance.client
           .from('report_counts')
-          .select('total')
+          .select('total, accurate, outdated, wrong')
           .eq('content_id', contentId)
           .limit(1);
       if (rows.isEmpty) {
-        return 0;
+        return null;
       }
-      return (rows.first['total'] as num).toInt();
+      final r = rows.first;
+      return ReportSummary(
+        total: (r['total'] as num).toInt(),
+        accurate: (r['accurate'] as num).toInt(),
+        outdated: (r['outdated'] as num).toInt(),
+        wrong: (r['wrong'] as num).toInt(),
+      );
     } catch (_) {
       return null;
     }

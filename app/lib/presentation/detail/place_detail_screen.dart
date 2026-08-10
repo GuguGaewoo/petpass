@@ -11,10 +11,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app_state.dart';
 import '../../core/platform.dart';
 import '../../core/tokens.dart';
+import '../../data/report_repository.dart';
 import '../../domain/models/place_constraint.dart';
 import '../../domain/models/verdict.dart';
 import '../nearby/nearby_screen.dart';
 import '../widgets/map_view.dart';
+import '../widgets/report_sheet.dart';
 import '../widgets/verdict_badge.dart';
 
 class PlaceDetailScreen extends StatelessWidget {
@@ -413,6 +415,37 @@ class PlaceDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // 이용자 제보 집계. 공공데이터 판정과 섞지 않고 분리해서 보여준다.
+              // 검증되지 않은 정보이므로 판정 카드 안에 넣지 않는다.
+              if (state.canReport)
+                _ReportLine(state: state, contentId: place.contentId),
+
+              // 제보는 부가 기능이므로 눈에 덜 띄는 형태로 둔다.
+              // 저장소를 쓸 수 없으면 아예 노출하지 않는다.
+              if (state.canReport)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: () =>
+                          showReportSheet(context, state: state, place: place),
+                      icon: const Icon(
+                        Icons.flag_outlined,
+                        size: 16,
+                        color: T.mute,
+                      ),
+                      label: const Text(
+                        '정보가 실제와 다른가요?',
+                        style: TextStyle(
+                          fontFamilyFallback: T.kr,
+                          fontSize: 13,
+                          color: T.mute,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -732,6 +765,74 @@ class _OverviewState extends State<_Overview> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// 이용자 제보 집계 한 줄.
+///
+/// 본문은 보여주지 않는다. 검증되지 않은 텍스트를 그대로 노출하면
+/// 잘못된 정보가 퍼지므로, 선택지 집계를 문장으로 만들어 전달한다.
+/// 불러오지 못하면 아무것도 그리지 않는다.
+class _ReportLine extends StatefulWidget {
+  const _ReportLine({required this.state, required this.contentId});
+
+  final AppState state;
+  final String contentId;
+
+  @override
+  State<_ReportLine> createState() => _ReportLineState();
+}
+
+class _ReportLineState extends State<_ReportLine> {
+  late final Future<ReportSummary?> _future = widget.state.reportSummaryOf(
+    widget.contentId,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ReportSummary?>(
+      future: _future,
+      builder: (context, snap) {
+        final s = snap.data;
+        if (s == null || s.total == 0) {
+          return const SizedBox.shrink();
+        }
+        final caution = s.needsCaution;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: caution ? T.holdBg : T.sunken,
+              borderRadius: BorderRadius.circular(T.r),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  caution ? Icons.info_outline : Icons.people_outline,
+                  size: 16,
+                  color: caution ? T.hold : T.inkSoft,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    s.line,
+                    style: TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: 12.5,
+                      color: caution ? T.hold : T.inkSoft,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
