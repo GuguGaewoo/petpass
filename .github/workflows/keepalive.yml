@@ -1,0 +1,22 @@
+name: Supabase keep-alive
+
+# 무료 티어는 요청이 없으면 프로젝트를 일시정지한다.
+# 제보(F-10)는 드물게 쓰이는 기능이라 몇 주간 요청이 없을 수 있고,
+# 그 사이 정지되면 제보 버튼이 동작하지 않는다. 주 1회 깨운다.
+on:
+  schedule:
+    - cron: '0 19 * * 0'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/report_counts?select=content_id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}")
+          echo "status: $code"
+          test "$code" = "200"
