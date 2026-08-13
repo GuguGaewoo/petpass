@@ -10,6 +10,8 @@ import '../../core/tokens.dart';
 
 class PetPassAssets {
   static const logo = 'assets/branding/petpass_logo.png';
+  static const appIcon1024 = 'assets/branding/app_icon_1024.png';
+  static const appIcon512 = 'assets/branding/app_icon_512.png';
   static const mascotProfile = 'assets/branding/mascot_profile.png';
   static const mascotSitting = 'assets/branding/mascot_sitting.png';
   static const mascotTravel = 'assets/branding/mascot_travel.png';
@@ -24,8 +26,14 @@ class PetPassAssets {
 
 enum PetPassMascotKind { profile, sitting, travel, sleeping }
 
+int _cacheWidth(BuildContext context, double logicalWidth, {int max = 768}) {
+  final dpr = MediaQuery.devicePixelRatioOf(context);
+  final target = (logicalWidth * dpr).ceil();
+  return target.clamp(1, max).toInt();
+}
+
 /// 화면 가장자리만 장식하는 발바닥 패턴.
-/// 콘텐츠 중앙 위로 구름/큰 장식이 지나가지 않도록 제한한다.
+/// 16~24px 장식에는 대형 PNG를 디코딩하지 않고 Material 벡터 아이콘을 쓴다.
 class PetPassBackdrop extends StatelessWidget {
   const PetPassBackdrop({
     super.key,
@@ -43,7 +51,7 @@ class PetPassBackdrop extends StatelessWidget {
       children: [
         child,
         IgnorePointer(
-          child: _PawEdgePattern(opacity: dense ? .12 : .075),
+          child: _PawEdgePattern(opacity: dense ? .10 : .055),
         ),
       ],
     );
@@ -87,15 +95,10 @@ class _PawEdgePattern extends StatelessWidget {
       top: top,
       child: Transform.rotate(
         angle: turn,
-        child: Opacity(
-          opacity: opacity,
-          child: Image.asset(
-            PetPassAssets.pawPrint,
-            width: size,
-            height: size,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.medium,
-          ),
+        child: Icon(
+          Icons.pets_rounded,
+          size: size,
+          color: T.brand.withValues(alpha: opacity),
         ),
       ),
     );
@@ -103,6 +106,7 @@ class _PawEdgePattern extends StatelessWidget {
 }
 
 /// 번들 이미지 기반 PetPass 마스코트.
+/// 표시 크기와 기기 DPR에 맞춰 디코딩 해상도를 제한해 래스터 캐시 낭비를 줄인다.
 class PetPassMascot extends StatelessWidget {
   const PetPassMascot({
     super.key,
@@ -131,14 +135,16 @@ class PetPassMascot extends StatelessWidget {
         child: Image.asset(
           _asset,
           fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
+          cacheWidth: _cacheWidth(context, size, max: 512),
+          filterQuality: FilterQuality.medium,
         ),
       );
     }
 
     final s = size;
+    final totalWidth = s * 1.55;
     return SizedBox(
-      width: s * 1.55,
+      width: totalWidth,
       height: s * 1.25,
       child: Stack(
         alignment: Alignment.bottomCenter,
@@ -154,7 +160,8 @@ class PetPassMascot extends StatelessWidget {
                 PetPassAssets.clouds,
                 height: s * .48,
                 fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
+                cacheWidth: _cacheWidth(context, totalWidth - s * .16),
+                filterQuality: FilterQuality.medium,
               ),
             ),
           ),
@@ -166,7 +173,8 @@ class PetPassMascot extends StatelessWidget {
               PetPassAssets.grassFlowers,
               height: s * .40,
               fit: BoxFit.fill,
-              filterQuality: FilterQuality.high,
+              cacheWidth: _cacheWidth(context, totalWidth),
+              filterQuality: FilterQuality.medium,
             ),
           ),
           Positioned(
@@ -177,7 +185,8 @@ class PetPassMascot extends StatelessWidget {
               child: Image.asset(
                 _asset,
                 fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
+                cacheWidth: _cacheWidth(context, s, max: 512),
+                filterQuality: FilterQuality.medium,
               ),
             ),
           ),
@@ -187,6 +196,7 @@ class PetPassMascot extends StatelessWidget {
   }
 }
 
+/// 작은 UI 발바닥은 PNG 대신 벡터 아이콘을 사용한다.
 class PetPassPawIcon extends StatelessWidget {
   const PetPassPawIcon({
     super.key,
@@ -199,14 +209,10 @@ class PetPassPawIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      PetPassAssets.pawPrint,
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      color: color,
-      colorBlendMode: color == null ? null : BlendMode.srcIn,
-      filterQuality: FilterQuality.medium,
+    return Icon(
+      Icons.pets_rounded,
+      size: size,
+      color: color ?? T.brand,
     );
   }
 }
