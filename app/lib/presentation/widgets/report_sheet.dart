@@ -111,7 +111,7 @@ class _SheetState extends State<_Sheet> {
                   border: Border.all(color: T.card),
                 ),
                 child: const Center(
-                  child: PetPassPawIcon(size: 22, color: T.brand),
+                  child: PetPassPawIcon(size: 22),
                 ),
               ),
               const SizedBox(width: 11),
