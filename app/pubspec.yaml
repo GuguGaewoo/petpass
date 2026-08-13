@@ -23,7 +23,8 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: true
-  ios: true
+  # ios 플랫폼이 없다. true 로 두면 Assets.xcassets 를 찾다 예외로 죽는다.
+  ios: false
   image_path: assets/branding/app_icon_1024.png
   adaptive_icon_background: "#FFF9F1"
   adaptive_icon_foreground: assets/branding/app_icon_1024.png

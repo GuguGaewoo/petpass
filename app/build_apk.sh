@@ -21,15 +21,12 @@ if [ -f ../.env ]; then
 fi
 
 if [ -z "${NAVER_MAP_CLIENT_ID}" ]; then
-  echo "경고: NAVER_MAP_CLIENT_ID 가 비어 있습니다. 지도가 표시되지 않습니다."
+  echo "오류: NAVER_MAP_CLIENT_ID 가 비어 있습니다." >&2
+  echo "      ~/petpass/.env 를 확인하세요. 지도 없는 APK 는 만들지 않습니다." >&2
+  exit 1
 fi
 
 MODE="${1:-debug}"
-
-# pubspec 설정과 실제 mipmap/AppIcon 리소스가 어긋나지 않도록
-# APK 빌드 전에 런처 아이콘을 항상 다시 생성한다.
-echo "PetPass 런처 아이콘 생성 중..."
-dart run flutter_launcher_icons
 
 # 릴리스는 CPU 아키텍처별로 나눈다.
 # 하나로 합치면 모든 아키텍처가 들어가 용량이 세 배가 된다.
