@@ -11,6 +11,7 @@ import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/neighbor.dart';
 import '../detail/place_detail_screen.dart';
+import 'petpass_decor.dart';
 
 Future<void> showNeighborSheet(
   BuildContext context, {
@@ -186,7 +187,7 @@ class _Sheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: T.paper,
                   borderRadius: BorderRadius.circular(T.r),
-                  border: Border.all(color: T.line),
+                  border: Border.all(color: const Color(0xFFE7DCCA)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,37 +215,18 @@ class _Sheet extends StatelessWidget {
             ],
             const SizedBox(height: 18),
             if (place != null)
-              SizedBox(
-                width: double.infinity,
+              PetPassPrimaryButton(
+                label: '동반 조건 자세히 보기',
                 height: 54,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            PlaceDetailScreen(state: state, place: place),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.pets_rounded, size: 19),
-                  label: const Text(
-                    '동반 조건 자세히 보기',
-                    style: TextStyle(
-                      fontFamilyFallback: T.kr,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PlaceDetailScreen(state: state, place: place),
                     ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: T.brand,
-                    foregroundColor: T.onBrand,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(T.rPill),
-                    ),
-                  ),
-                ),
+                  );
+                },
               )
             else
               Container(
