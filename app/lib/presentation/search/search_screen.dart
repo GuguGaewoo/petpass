@@ -11,6 +11,7 @@ import '../../domain/models/place_constraint.dart';
 import '../../domain/models/verdict.dart';
 import '../detail/place_detail_screen.dart';
 import '../saved/saved_screen.dart';
+import '../widgets/petpass_decor.dart';
 import '../widgets/verdict_badge.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -692,14 +693,25 @@ class _EmptyResult extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.pets_rounded, size: 34, color: T.brand),
-            SizedBox(height: 12),
+            PetPassMascot(size: 104),
+            SizedBox(height: 18),
             Text(
-              '조건에 맞는 곳이 없어요.\n필터를 조금 줄여보세요.',
+              '조건에 맞는 곳이 없어요',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamilyFallback: T.kr,
-                fontSize: 14,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: T.ink,
+              ),
+            ),
+            SizedBox(height: 7),
+            Text(
+              '필터를 조금 줄이거나 다른 지역을 확인해보세요.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamilyFallback: T.kr,
+                fontSize: 12.5,
                 color: T.inkSoft,
                 height: 1.6,
               ),
