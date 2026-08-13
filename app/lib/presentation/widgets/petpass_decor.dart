@@ -70,12 +70,12 @@ class _PawEdgePattern extends StatelessWidget {
         final h = c.maxHeight;
         return Stack(
           children: [
-            _paw(left: -5, top: h * .08, size: 24, turn: -.28),
-            _paw(right: -4, top: h * .21, size: 18, turn: .24),
-            _paw(left: -3, top: h * .48, size: 16, turn: .30),
-            _paw(right: -6, top: h * .61, size: 23, turn: -.20),
-            _paw(left: -5, top: h * .80, size: 19, turn: .12),
-            _paw(right: -4, top: h * .91, size: 16, turn: -.32),
+            _paw(left: 8, top: h * .08, size: 24, turn: -.28),
+            _paw(right: 10, top: h * .21, size: 18, turn: .24),
+            _paw(left: 12, top: h * .48, size: 16, turn: .30),
+            _paw(right: 8, top: h * .61, size: 23, turn: -.20),
+            _paw(left: 10, top: h * .80, size: 19, turn: .12),
+            _paw(right: 12, top: h * .91, size: 16, turn: -.32),
           ],
         );
       },
