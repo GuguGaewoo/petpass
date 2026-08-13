@@ -187,7 +187,7 @@ class _Sheet extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: T.paper,
                   borderRadius: BorderRadius.circular(T.r),
-                  border: Border.all(color: const Color(0xFFE7DCCA)),
+                  border: Border.all(color: T.line),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
