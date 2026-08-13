@@ -10,6 +10,7 @@ import '../../app_state.dart';
 import '../../core/tokens.dart';
 import '../../data/report_repository.dart';
 import '../../domain/models/place_constraint.dart';
+import 'petpass_decor.dart';
 
 Future<void> showReportSheet(
   BuildContext context, {
@@ -80,15 +81,15 @@ class _SheetState extends State<_Sheet> {
   }
 
   Widget _grip() => Center(
-    child: Container(
-      width: 38,
-      height: 4,
-      decoration: BoxDecoration(
-        color: T.lineStrong,
-        borderRadius: BorderRadius.circular(T.rPill),
-      ),
-    ),
-  );
+        child: Container(
+          width: 38,
+          height: 4,
+          decoration: BoxDecoration(
+            color: T.lineStrong,
+            borderRadius: BorderRadius.circular(T.rPill),
+          ),
+        ),
+      );
 
   Widget _form() {
     return SingleChildScrollView(
@@ -102,15 +103,16 @@ class _SheetState extends State<_Sheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: T.brandSoft,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.white),
                 ),
                 child: const Icon(
                   Icons.pets_rounded,
-                  size: 21,
+                  size: 22,
                   color: T.brand,
                 ),
               ),
@@ -178,16 +180,16 @@ class _SheetState extends State<_Sheet> {
                 color: T.mute,
               ),
               filled: true,
-              fillColor: T.paper,
+              fillColor: const Color(0xFFFFFCF7),
               counterStyle: const TextStyle(fontSize: 11, color: T.mute),
               contentPadding: const EdgeInsets.all(14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(T.r),
-                borderSide: const BorderSide(color: T.line),
+                borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(T.r),
-                borderSide: const BorderSide(color: T.line),
+                borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(T.r),
@@ -196,42 +198,10 @@ class _SheetState extends State<_Sheet> {
             ),
           ),
           const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
+          PetPassPrimaryButton(
+            label: _sending ? '전송 중' : '제보 보내기',
             height: 54,
-            child: FilledButton.icon(
-              onPressed: _kind == null || _sending ? null : _send,
-              icon: _sending
-                  ? const SizedBox.shrink()
-                  : const Icon(Icons.pets_rounded, size: 19),
-              label: _sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      '제보 보내기',
-                      style: TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-              style: FilledButton.styleFrom(
-                backgroundColor: T.brand,
-                foregroundColor: T.onBrand,
-                disabledBackgroundColor: T.line,
-                disabledForegroundColor: T.mute,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(T.rPill),
-                ),
-              ),
-            ),
+            onPressed: _kind == null || _sending ? null : _send,
           ),
           const SizedBox(height: 11),
           Container(
@@ -278,21 +248,30 @@ class _SheetState extends State<_Sheet> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: on ? T.brandSoft : T.paper,
+          color: on ? T.brandSoft : const Color(0xFFFFFCF7),
           border: Border.all(
-            color: on ? T.brand : T.line,
+            color: on ? T.brand : const Color(0xFFE9DFD3),
             width: on ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(T.rCard),
+          boxShadow: on
+              ? const [
+                  BoxShadow(
+                    color: Color(0x138B72C8),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: on ? T.card : T.brandMist,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(
                 _kindIcon(k),
@@ -362,20 +341,23 @@ class _SheetState extends State<_Sheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         _grip(),
-        const SizedBox(height: 34),
-        Container(
-          width: 82,
-          height: 82,
-          decoration: BoxDecoration(
-            color: ok ? T.brandSoft : T.stopBg,
-            shape: BoxShape.circle,
+        const SizedBox(height: 30),
+        if (ok)
+          const PetPassMascot(size: 92)
+        else
+          Container(
+            width: 82,
+            height: 82,
+            decoration: const BoxDecoration(
+              color: T.stopBg,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.error_outline_rounded,
+              size: 39,
+              color: T.stop,
+            ),
           ),
-          child: Icon(
-            ok ? Icons.pets_rounded : Icons.error_outline_rounded,
-            size: 39,
-            color: ok ? T.brand : T.stop,
-          ),
-        ),
         const SizedBox(height: 18),
         Text(
           ok ? '보내주셔서 감사합니다' : '지금은 보낼 수 없습니다',
@@ -398,29 +380,10 @@ class _SheetState extends State<_Sheet> {
           ),
         ),
         const SizedBox(height: 26),
-        SizedBox(
-          width: double.infinity,
+        PetPassPrimaryButton(
+          label: '닫기',
           height: 52,
-          child: FilledButton.icon(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.pets_rounded, size: 18),
-            label: const Text(
-              '닫기',
-              style: TextStyle(
-                fontFamilyFallback: T.kr,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: T.brand,
-              foregroundColor: T.onBrand,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(T.rPill),
-              ),
-            ),
-          ),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );
