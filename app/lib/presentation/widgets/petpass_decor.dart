@@ -33,7 +33,7 @@ int _cacheWidth(BuildContext context, double logicalWidth, {int max = 768}) {
 }
 
 /// 화면 가장자리만 장식하는 발바닥 패턴.
-/// 16~24px 장식에는 대형 PNG를 디코딩하지 않고 Material 벡터 아이콘을 쓴다.
+/// 원본 PNG의 말랑한 질감은 유지하되 작은 크기로만 디코딩한다.
 class PetPassBackdrop extends StatelessWidget {
   const PetPassBackdrop({
     super.key,
@@ -51,7 +51,7 @@ class PetPassBackdrop extends StatelessWidget {
       children: [
         child,
         IgnorePointer(
-          child: _PawEdgePattern(opacity: dense ? .10 : .055),
+          child: _PawEdgePattern(opacity: dense ? .12 : .075),
         ),
       ],
     );
@@ -70,19 +70,20 @@ class _PawEdgePattern extends StatelessWidget {
         final h = c.maxHeight;
         return Stack(
           children: [
-            _paw(left: 8, top: h * .08, size: 24, turn: -.28),
-            _paw(right: 10, top: h * .21, size: 18, turn: .24),
-            _paw(left: 12, top: h * .48, size: 16, turn: .30),
-            _paw(right: 8, top: h * .61, size: 23, turn: -.20),
-            _paw(left: 10, top: h * .80, size: 19, turn: .12),
-            _paw(right: 12, top: h * .91, size: 16, turn: -.32),
+            _paw(context, left: 8, top: h * .08, size: 24, turn: -.28),
+            _paw(context, right: 10, top: h * .21, size: 18, turn: .24),
+            _paw(context, left: 12, top: h * .48, size: 16, turn: .30),
+            _paw(context, right: 8, top: h * .61, size: 23, turn: -.20),
+            _paw(context, left: 10, top: h * .80, size: 19, turn: .12),
+            _paw(context, right: 12, top: h * .91, size: 16, turn: -.32),
           ],
         );
       },
     );
   }
 
-  Widget _paw({
+  Widget _paw(
+    BuildContext context, {
     double? left,
     double? right,
     required double top,
@@ -95,10 +96,16 @@ class _PawEdgePattern extends StatelessWidget {
       top: top,
       child: Transform.rotate(
         angle: turn,
-        child: Icon(
-          Icons.pets_rounded,
-          size: size,
-          color: T.brand.withValues(alpha: opacity),
+        child: Opacity(
+          opacity: opacity,
+          child: Image.asset(
+            PetPassAssets.pawPrint,
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+            cacheWidth: _cacheWidth(context, size, max: 72),
+            filterQuality: FilterQuality.medium,
+          ),
         ),
       ),
     );
@@ -196,23 +203,30 @@ class PetPassMascot extends StatelessWidget {
   }
 }
 
-/// 작은 UI 발바닥은 PNG 대신 벡터 아이콘을 사용한다.
+/// 작은 UI에서도 원본 PNG의 색감과 명암을 그대로 사용하는 발바닥.
+/// cacheWidth를 96px 이하로 제한해 1254px 원본을 그대로 디코딩하지 않는다.
 class PetPassPawIcon extends StatelessWidget {
   const PetPassPawIcon({
     super.key,
     this.size = 18,
-    this.color,
+    this.opacity = 1,
   });
 
   final double size;
-  final Color? color;
+  final double opacity;
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      Icons.pets_rounded,
-      size: size,
-      color: color ?? T.brand,
+    return Opacity(
+      opacity: opacity,
+      child: Image.asset(
+        PetPassAssets.pawPrint,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        cacheWidth: _cacheWidth(context, size, max: 96),
+        filterQuality: FilterQuality.medium,
+      ),
     );
   }
 }
@@ -270,7 +284,7 @@ class PetPassPrimaryButton extends StatelessWidget {
             const SizedBox(width: 9),
             PetPassPawIcon(
               size: 19,
-              color: onPressed == null ? T.mute : T.onBrand,
+              opacity: onPressed == null ? .35 : 1,
             ),
           ],
         ),
