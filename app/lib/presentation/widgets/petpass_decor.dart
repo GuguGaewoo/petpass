@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/tokens.dart';
 
-/// 화면 뒤에 매우 옅은 발바닥 패턴을 깐다.
+/// 화면 위에 매우 옅은 발바닥 패턴을 얹는다.
 /// IgnorePointer로 장식이 터치/스크롤을 가로채지 않게 한다.
 class PetPassBackdrop extends StatelessWidget {
   const PetPassBackdrop({
@@ -24,13 +24,13 @@ class PetPassBackdrop extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        child,
         IgnorePointer(
           child: Opacity(
-            opacity: dense ? .075 : .052,
+            opacity: dense ? .060 : .038,
             child: const _PawPattern(),
           ),
         ),
-        child,
       ],
     );
   }
@@ -47,14 +47,12 @@ class _PawPattern extends StatelessWidget {
         final h = c.maxHeight;
         return Stack(
           children: [
-            _paw(left: w * .04, top: h * .06, size: 28, turn: -.30),
-            _paw(right: w * .08, top: h * .13, size: 18, turn: .22),
-            _paw(left: w * .17, top: h * .31, size: 15, turn: .36),
-            _paw(right: w * .16, top: h * .38, size: 25, turn: -.20),
-            _paw(left: w * .06, top: h * .58, size: 20, turn: .16),
-            _paw(right: w * .05, top: h * .67, size: 16, turn: -.36),
-            _paw(left: w * .28, top: h * .83, size: 23, turn: -.14),
-            _paw(right: w * .25, top: h * .91, size: 17, turn: .30),
+            _paw(left: w * .025, top: h * .08, size: 25, turn: -.30),
+            _paw(right: w * .035, top: h * .18, size: 17, turn: .22),
+            _paw(left: w * .035, top: h * .43, size: 15, turn: .36),
+            _paw(right: w * .035, top: h * .52, size: 22, turn: -.20),
+            _paw(left: w * .025, top: h * .73, size: 18, turn: .16),
+            _paw(right: w * .035, top: h * .86, size: 16, turn: -.36),
           ],
         );
       },
