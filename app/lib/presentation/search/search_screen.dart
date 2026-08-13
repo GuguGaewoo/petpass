@@ -112,9 +112,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: T.card,
+                                color: n > 0 ? T.brandSoft : T.card,
                                 borderRadius: BorderRadius.circular(T.rPill),
-                                border: Border.all(color: T.line),
+                                border: Border.all(
+                                  color: n > 0 ? T.brandSoft : T.line,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -124,7 +126,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         ? Icons.favorite_rounded
                                         : Icons.favorite_border_rounded,
                                     size: 18,
-                                    color: n > 0 ? T.brand : T.inkSoft,
+                                    color: n > 0 ? T.brandDeep : T.inkSoft,
                                   ),
                                   if (n > 0) ...[
                                     const SizedBox(width: 5),
@@ -148,11 +150,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                  child: Align(
+                  child: const Align(
                     alignment: Alignment.centerLeft,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           '어디를 찾고 있나요?',
                           style: TextStyle(
@@ -197,10 +199,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         size: 20,
                         color: T.brand,
                       ),
-                      suffixIcon: const Icon(
-                        Icons.pets_rounded,
-                        size: 19,
-                        color: T.brand,
+                      suffixIcon: const Padding(
+                        padding: EdgeInsets.all(13),
+                        child: PetPassPawIcon(size: 18),
                       ),
                       filled: true,
                       fillColor: T.card,
@@ -229,6 +230,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       color: T.card,
                       borderRadius: BorderRadius.circular(T.rCard),
                       border: Border.all(color: T.line),
+                      boxShadow: T.softShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,17 +332,25 @@ class _SearchScreenState extends State<SearchScreen> {
                               const SizedBox(height: T.gapCard),
                           itemBuilder: (context, i) {
                             final e = judged[i];
-                            return _PlaceCard(
-                              place: e.place,
-                              verdict: e.verdict,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PlaceDetailScreen(
-                                    state: widget.state,
-                                    place: e.place,
+                            return ListenableBuilder(
+                              listenable: s,
+                              builder: (context, _) {
+                                return _PlaceCard(
+                                  place: e.place,
+                                  verdict: e.verdict,
+                                  saved: s.isSaved(e.place.contentId),
+                                  onSavedToggle: () =>
+                                      s.toggleSaved(e.place.contentId),
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => PlaceDetailScreen(
+                                        state: widget.state,
+                                        place: e.place,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             );
                           },
                         ),
@@ -506,11 +516,15 @@ class _PlaceCard extends StatelessWidget {
   const _PlaceCard({
     required this.place,
     required this.verdict,
+    required this.saved,
+    required this.onSavedToggle,
     required this.onTap,
   });
 
   final PlaceConstraint place;
   final Verdict verdict;
+  final bool saved;
+  final VoidCallback onSavedToggle;
   final VoidCallback onTap;
 
   @override
@@ -521,6 +535,7 @@ class _PlaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: T.card,
         borderRadius: BorderRadius.circular(T.rCard),
+        border: Border.all(color: saved ? T.brandSoft : T.line),
         boxShadow: T.softShadow,
       ),
       child: Material(
@@ -564,6 +579,14 @@ class _PlaceCard extends StatelessWidget {
                         child: VerdictBadge(verdict.level),
                       ),
                       Positioned(
+                        right: 12,
+                        top: 12,
+                        child: _FavoriteBubble(
+                          saved: saved,
+                          onPressed: onSavedToggle,
+                        ),
+                      ),
+                      Positioned(
                         left: 16,
                         right: 16,
                         bottom: 14,
@@ -605,7 +628,16 @@ class _PlaceCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      VerdictBadge(verdict.level),
+                      Row(
+                        children: [
+                          Expanded(child: VerdictBadge(verdict.level)),
+                          _FavoriteBubble(
+                            saved: saved,
+                            onPressed: onSavedToggle,
+                            elevated: false,
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 10),
                       Text(
                         place.title,
@@ -672,13 +704,49 @@ class _PlaceCard extends StatelessWidget {
   }
 }
 
+class _FavoriteBubble extends StatelessWidget {
+  const _FavoriteBubble({
+    required this.saved,
+    required this.onPressed,
+    this.elevated = true,
+  });
+
+  final bool saved;
+  final VoidCallback onPressed;
+  final bool elevated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: T.card.withValues(alpha: elevated ? .94 : 1),
+      shape: const CircleBorder(),
+      elevation: elevated ? 1 : 0,
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Icon(
+            saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            size: 20,
+            color: saved ? T.brandDeep : T.inkSoft,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NoImage extends StatelessWidget {
   const _NoImage();
 
   @override
   Widget build(BuildContext context) => const ColoredBox(
     color: T.brandMist,
-    child: Center(child: Icon(Icons.pets_rounded, size: 28, color: T.brand)),
+    child: Center(
+      child: PetPassMascot(size: 76, kind: PetPassMascotKind.sitting),
+    ),
   );
 }
 
