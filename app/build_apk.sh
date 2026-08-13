@@ -5,6 +5,9 @@
 # 그냥 flutter build apk 를 돌리면 지도 키가 빈 문자열이 되어
 # 앱에서 "지도 키가 설정되지 않았습니다" 가 뜬다.
 #
+# 런처 아이콘은 assets/branding/app_icon_1024.png 를 기준으로
+# flutter_launcher_icons 가 Android/iOS 네이티브 리소스를 생성한다.
+#
 # 사용:
 #   ./build_apk.sh           디버그 (실기기 확인용)
 #   ./build_apk.sh release   릴리스 (스토어 제출용, ABI 별로 분리)
@@ -22,6 +25,11 @@ if [ -z "${NAVER_MAP_CLIENT_ID}" ]; then
 fi
 
 MODE="${1:-debug}"
+
+# pubspec 설정과 실제 mipmap/AppIcon 리소스가 어긋나지 않도록
+# APK 빌드 전에 런처 아이콘을 항상 다시 생성한다.
+echo "PetPass 런처 아이콘 생성 중..."
+dart run flutter_launcher_icons
 
 # 릴리스는 CPU 아키텍처별로 나눈다.
 # 하나로 합치면 모든 아키텍처가 들어가 용량이 세 배가 된다.
