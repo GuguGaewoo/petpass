@@ -83,15 +83,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: T.card,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFE7DCCA)),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x120C0713),
-                        blurRadius: 18,
-                        offset: Offset(0, 7),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(T.rCard),
+                    border: Border.all(color: T.line),
+                    boxShadow: T.softShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: T.brand,
-                          inactiveTrackColor: const Color(0xFFE8E0D7),
+                          inactiveTrackColor: T.line,
                           thumbColor: T.brand,
                           overlayColor: T.brandSoft,
                           trackHeight: 4,
@@ -235,19 +229,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontSize: 14,
         ),
         filled: true,
-        fillColor: const Color(0xFFFFFCF7),
+        fillColor: T.paper,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
+          borderRadius: BorderRadius.circular(T.r),
+          borderSide: const BorderSide(color: T.line),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
+          borderRadius: BorderRadius.circular(T.r),
+          borderSide: const BorderSide(color: T.line),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(T.r),
           borderSide: const BorderSide(color: T.brand, width: 1.5),
         ),
       );
@@ -365,8 +359,22 @@ class _PetAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: PetPassMascot(size: 132, withMeadow: true),
+    return Center(
+      child: Container(
+        width: 138,
+        height: 138,
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: T.brandSoft,
+          shape: BoxShape.circle,
+          border: Border.all(color: T.card, width: 4),
+          boxShadow: T.softShadow,
+        ),
+        child: const PetPassMascot(
+          size: 128,
+          kind: PetPassMascotKind.profile,
+        ),
+      ),
     );
   }
 }
