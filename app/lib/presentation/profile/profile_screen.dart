@@ -73,24 +73,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(22, 14, 22, 34),
+              padding: const EdgeInsets.fromLTRB(22, 12, 22, 36),
               children: [
                 const _TitleBar(),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 const _PetAvatar(),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: T.card,
-                    borderRadius: BorderRadius.circular(T.rCard),
-                    border: Border.all(color: T.line),
-                    boxShadow: T.softShadow,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFE7DCCA)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x120C0713),
+                        blurRadius: 18,
+                        offset: Offset(0, 7),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _label('이름'),
+                      const SizedBox(height: 7),
                       TextField(
                         controller: _name,
                         style: const TextStyle(
@@ -100,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         decoration: _inputDecoration('이름을 입력해주세요'),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 23),
                       Row(
                         children: [
                           _label('체중'),
@@ -115,13 +122,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 4),
                       SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           activeTrackColor: T.brand,
-                          inactiveTrackColor: T.line,
+                          inactiveTrackColor: const Color(0xFFE8E0D7),
                           thumbColor: T.brand,
                           overlayColor: T.brandSoft,
                           trackHeight: 4,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 7,
+                          ),
                         ),
                         child: Slider(
                           value: _weight,
@@ -138,7 +149,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(
                             '0.5kg',
-                            style: T.mono.copyWith(fontSize: 10.5, color: T.mute),
+                            style: T.mono.copyWith(
+                              fontSize: 10.5,
+                              color: T.mute,
+                            ),
                           ),
                           const Spacer(),
                           Container(
@@ -149,6 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               color: T.brandMist,
                               borderRadius: BorderRadius.circular(T.rPill),
+                              border: Border.all(color: T.brandSoft),
                             ),
                             child: Text(
                               _size.label,
@@ -163,12 +178,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const Spacer(),
                           Text(
                             '45kg',
-                            style: T.mono.copyWith(fontSize: 10.5, color: T.mute),
+                            style: T.mono.copyWith(
+                              fontSize: 10.5,
+                              color: T.mute,
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       _toggle(
+                        icon: Icons.warning_amber_rounded,
                         title: '맹견 여부',
                         note: '맹견에 해당하면 켜주세요',
                         value: _fierce,
@@ -176,6 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const Divider(height: 1, color: T.line),
                       _toggle(
+                        icon: Icons.volunteer_activism_outlined,
                         title: '보조견(안내견) 여부',
                         note: '보조견은 별도 기준으로 판정합니다',
                         value: _guideDog,
@@ -185,31 +205,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  height: 56,
-                  child: FilledButton.icon(
-                    onPressed: _submit,
-                    iconAlignment: IconAlignment.end,
-                    icon: const Icon(Icons.pets_rounded, size: 20),
-                    label: const Text(
-                      '저장하고 장소 찾기',
-                      style: TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: T.brand,
-                      foregroundColor: T.onBrand,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(T.rPill),
-                      ),
-                    ),
-                  ),
+                PetPassPrimaryButton(
+                  label: '장소 찾아보기',
+                  onPressed: _submit,
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 16),
                 const Text(
                   '입력한 정보는 이 기기에만 저장되며 어디에도 전송하지 않습니다.',
                   textAlign: TextAlign.center,
@@ -228,40 +228,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(
-      fontFamilyFallback: T.kr,
-      color: T.mute,
-      fontSize: 14,
-    ),
-    filled: true,
-    fillColor: T.paper,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(T.r),
-      borderSide: const BorderSide(color: T.line),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(T.r),
-      borderSide: const BorderSide(color: T.line),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(T.r),
-      borderSide: const BorderSide(color: T.brand, width: 1.5),
-    ),
-  );
+        hintText: hint,
+        hintStyle: const TextStyle(
+          fontFamilyFallback: T.kr,
+          color: T.mute,
+          fontSize: 14,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFFFFCF7),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: T.brand, width: 1.5),
+        ),
+      );
 
   Widget _label(String s) => Text(
-    s,
-    style: const TextStyle(
-      fontFamilyFallback: T.kr,
-      fontSize: 13,
-      fontWeight: FontWeight.w700,
-      color: T.ink,
-    ),
-  );
+        s,
+        style: const TextStyle(
+          fontFamilyFallback: T.kr,
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: T.ink,
+        ),
+      );
 
   Widget _toggle({
+    required IconData icon,
     required String title,
     required String note,
     required bool value,
@@ -274,6 +276,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(vertical: 13),
         child: Row(
           children: [
+            Container(
+              width: 35,
+              height: 35,
+              decoration: BoxDecoration(
+                color: value ? T.brandSoft : T.brandMist,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: value ? T.brandDeep : T.inkSoft,
+              ),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,7 +340,7 @@ class _TitleBar extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamilyFallback: T.kr,
-            fontSize: 16,
+            fontSize: 17,
             fontWeight: FontWeight.w800,
             color: T.ink,
           ),
@@ -350,7 +366,7 @@ class _PetAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: PetPassMascot(size: 118),
+      child: PetPassMascot(size: 132, withMeadow: true),
     );
   }
 }
