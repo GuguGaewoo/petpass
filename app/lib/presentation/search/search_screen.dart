@@ -67,294 +67,54 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.arrow_back_rounded, size: 21),
-                        color: T.inkSoft,
-                      ),
-                      Expanded(
-                        child: Text(
-                          pet == null
-                              ? '펫패스'
-                              : '${pet.name} · ${pet.weightKg.toStringAsFixed(1)}kg · ${pet.size.label}'
-                                    '${pet.isFierce ? ' · 맹견' : ''}'
-                                    '${pet.isGuideDog ? ' · 보조견' : ''}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: T.inkSoft,
-                          ),
-                        ),
-                      ),
-                      ListenableBuilder(
-                        listenable: s,
-                        builder: (context, _) {
-                          final n = s.savedCount;
-                          return InkWell(
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => SavedScreen(state: s),
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(T.rPill),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: n > 0 ? T.brandSoft : T.card,
-                                borderRadius: BorderRadius.circular(T.rPill),
-                                border: Border.all(
-                                  color: n > 0 ? T.brandSoft : T.line,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    n > 0
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 18,
-                                    color: n > 0 ? T.brandDeep : T.inkSoft,
-                                  ),
-                                  if (n > 0) ...[
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      '$n',
-                                      style: T.mono.copyWith(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: T.brandDeep,
-                                      ),
+            child: CustomScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                SliverToBoxAdapter(child: _header(s, pet)),
+                const SliverToBoxAdapter(child: _SearchTitle()),
+                SliverToBoxAdapter(child: _searchField()),
+                SliverToBoxAdapter(child: _filterPanel()),
+                SliverToBoxAdapter(child: _countRow(judged.length, counts)),
+                if (judged.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyResult(),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index.isOdd) {
+                            return const SizedBox(height: T.gapCard);
+                          }
+                          final e = judged[index ~/ 2];
+                          return ListenableBuilder(
+                            listenable: s,
+                            builder: (context, _) {
+                              return _PlaceCard(
+                                place: e.place,
+                                verdict: e.verdict,
+                                saved: s.isSaved(e.place.contentId),
+                                onSavedToggle: () =>
+                                    s.toggleSaved(e.place.contentId),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PlaceDetailScreen(
+                                      state: s,
+                                      place: e.place,
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                  child: const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '어디를 찾고 있나요?',
-                          style: TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 25,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.6,
-                            color: T.ink,
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          '장소 이름, 주소와 실제 동반 조건을 함께 확인해요.',
-                          style: TextStyle(
-                            fontFamilyFallback: T.kr,
-                            fontSize: 12.5,
-                            color: T.inkSoft,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: TextField(
-                    onChanged: (v) => setState(() => _query = v),
-                    style: const TextStyle(
-                      fontFamilyFallback: T.kr,
-                      fontSize: 15,
-                      color: T.ink,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '장소 이름이나 주소로 검색',
-                      hintStyle: const TextStyle(
-                        fontFamilyFallback: T.kr,
-                        color: T.mute,
-                        fontSize: 14,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        size: 20,
-                        color: T.brand,
-                      ),
-                      suffixIcon: const Padding(
-                        padding: EdgeInsets.all(13),
-                        child: PetPassPawIcon(size: 18),
-                      ),
-                      filled: true,
-                      fillColor: T.card,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(T.rPill),
-                        borderSide: const BorderSide(color: T.line),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(T.rPill),
-                        borderSide: const BorderSide(color: T.line),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(T.rPill),
-                        borderSide: const BorderSide(color: T.brand, width: 1.5),
+                        childCount: judged.length * 2 - 1,
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: T.card,
-                      borderRadius: BorderRadius.circular(T.rCard),
-                      border: Border.all(color: T.line),
-                      boxShadow: T.softShadow,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _groupLabel('장소 유형'),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final t in _types)
-                              _typeFilter(
-                                t,
-                                _type == t,
-                                () => setState(
-                                  () => _type = _type == t ? null : t,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(child: _groupLabel('지역')),
-                            _areaToggle(),
-                          ],
-                        ),
-                        if (_areaOpen)
-                          Wrap(
-                            spacing: 7,
-                            runSpacing: 7,
-                            children: [
-                              for (final e in areaNames.entries)
-                                _filter(
-                                  e.value,
-                                  _area == e.key,
-                                  () => setState(
-                                    () => _area = _area == e.key ? null : e.key,
-                                  ),
-                                ),
-                            ],
-                          )
-                        else if (_area != null)
-                          _filter(
-                            areaNames[_area] ?? '',
-                            true,
-                            () => setState(() => _area = null),
-                          ),
-                        const SizedBox(height: 14),
-                        _possibleSwitch(),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${judged.length}곳',
-                        style: T.mono.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: T.inkSoft,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              for (final l in VerdictLevel.values)
-                                if ((counts[l] ?? 0) > 0)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: Text(
-                                      '${l.label} ${counts[l]}',
-                                      style: TextStyle(
-                                        fontFamilyFallback: T.kr,
-                                        fontSize: 11.5,
-                                        color: verdictColors(l).fg,
-                                      ),
-                                    ),
-                                  ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: judged.isEmpty
-                      ? const _EmptyResult()
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-                          itemCount: judged.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: T.gapCard),
-                          itemBuilder: (context, i) {
-                            final e = judged[i];
-                            return ListenableBuilder(
-                              listenable: s,
-                              builder: (context, _) {
-                                return _PlaceCard(
-                                  place: e.place,
-                                  verdict: e.verdict,
-                                  saved: s.isSaved(e.place.contentId),
-                                  onSavedToggle: () =>
-                                      s.toggleSaved(e.place.contentId),
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => PlaceDetailScreen(
-                                        state: widget.state,
-                                        place: e.place,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                ),
               ],
             ),
           ),
@@ -363,18 +123,243 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _groupLabel(String label) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      label,
-      style: const TextStyle(
-        fontFamilyFallback: T.kr,
-        fontSize: 12.5,
-        fontWeight: FontWeight.w800,
-        color: T.ink,
+  Widget _header(AppState s, dynamic pet) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.arrow_back_rounded, size: 21),
+            color: T.inkSoft,
+          ),
+          Expanded(
+            child: Text(
+              pet == null
+                  ? '펫패스'
+                  : '${pet.name} · ${pet.weightKg.toStringAsFixed(1)}kg · ${pet.size.label}'
+                        '${pet.isFierce ? ' · 맹견' : ''}'
+                        '${pet.isGuideDog ? ' · 보조견' : ''}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamilyFallback: T.kr,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: T.inkSoft,
+              ),
+            ),
+          ),
+          ListenableBuilder(
+            listenable: s,
+            builder: (context, _) {
+              final n = s.savedCount;
+              return InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => SavedScreen(state: s)),
+                ),
+                borderRadius: BorderRadius.circular(T.rPill),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: n > 0 ? T.brandSoft : T.card,
+                    borderRadius: BorderRadius.circular(T.rPill),
+                    border: Border.all(color: n > 0 ? T.brandSoft : T.line),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        n > 0
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        size: 18,
+                        color: n > 0 ? T.brandDeep : T.inkSoft,
+                      ),
+                      if (n > 0) ...[
+                        const SizedBox(width: 5),
+                        Text(
+                          '$n',
+                          style: T.mono.copyWith(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: T.brandDeep,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _searchField() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: TextField(
+        onChanged: (v) => setState(() => _query = v),
+        textInputAction: TextInputAction.search,
+        style: const TextStyle(
+          fontFamilyFallback: T.kr,
+          fontSize: 15,
+          color: T.ink,
+        ),
+        decoration: InputDecoration(
+          hintText: '장소 이름이나 주소로 검색',
+          hintStyle: const TextStyle(
+            fontFamilyFallback: T.kr,
+            color: T.mute,
+            fontSize: 14,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            size: 20,
+            color: T.brand,
+          ),
+          suffixIcon: const Padding(
+            padding: EdgeInsets.all(13),
+            child: PetPassPawIcon(size: 18),
+          ),
+          filled: true,
+          fillColor: T.card,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(T.rPill),
+            borderSide: const BorderSide(color: T.line),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(T.rPill),
+            borderSide: const BorderSide(color: T.line),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(T.rPill),
+            borderSide: const BorderSide(color: T.brand, width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterPanel() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: T.card,
+          borderRadius: BorderRadius.circular(T.rCard),
+          border: Border.all(color: T.line),
+          boxShadow: T.softShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _groupLabel('장소 유형'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final t in _types)
+                  _typeFilter(
+                    t,
+                    _type == t,
+                    () => setState(() => _type = _type == t ? null : t),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _groupLabel('지역')),
+                _areaToggle(),
+              ],
+            ),
+            if (_areaOpen)
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: [
+                  for (final e in areaNames.entries)
+                    _filter(
+                      e.value,
+                      _area == e.key,
+                      () => setState(() => _area = _area == e.key ? null : e.key),
+                    ),
+                ],
+              )
+            else if (_area != null)
+              _filter(
+                areaNames[_area] ?? '',
+                true,
+                () => setState(() => _area = null),
+              ),
+            const SizedBox(height: 14),
+            _possibleSwitch(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _countRow(int count, Map<VerdictLevel, int> counts) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+      child: Row(
+        children: [
+          Text(
+            '$count곳',
+            style: T.mono.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: T.inkSoft,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final l in VerdictLevel.values)
+                    if ((counts[l] ?? 0) > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Text(
+                          '${l.label} ${counts[l]}',
+                          style: TextStyle(
+                            fontFamilyFallback: T.kr,
+                            fontSize: 11.5,
+                            color: verdictColors(l).fg,
+                          ),
+                        ),
+                      ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _groupLabel(String label) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontFamilyFallback: T.kr,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w800,
+            color: T.ink,
+          ),
+        ),
+      );
 
   Widget _areaToggle() {
     return GestureDetector(
@@ -502,14 +487,52 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   IconData _typeIcon(String type) => switch (type) {
-    '관광지' => Icons.landscape_outlined,
-    '숙박' => Icons.bed_outlined,
-    '음식점' => Icons.restaurant_outlined,
-    '레포츠' => Icons.directions_run_rounded,
-    '쇼핑' => Icons.shopping_bag_outlined,
-    '문화시설' => Icons.museum_outlined,
-    _ => Icons.place_outlined,
-  };
+        '관광지' => Icons.landscape_outlined,
+        '숙박' => Icons.bed_outlined,
+        '음식점' => Icons.restaurant_outlined,
+        '레포츠' => Icons.directions_run_rounded,
+        '쇼핑' => Icons.shopping_bag_outlined,
+        '문화시설' => Icons.museum_outlined,
+        _ => Icons.place_outlined,
+      };
+}
+
+class _SearchTitle extends StatelessWidget {
+  const _SearchTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '어디를 찾고 있나요?',
+              style: TextStyle(
+                fontFamilyFallback: T.kr,
+                fontSize: 25,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.6,
+                color: T.ink,
+              ),
+            ),
+            SizedBox(height: 5),
+            Text(
+              '장소 이름, 주소와 실제 동반 조건을 함께 확인해요.',
+              style: TextStyle(
+                fontFamilyFallback: T.kr,
+                fontSize: 12.5,
+                color: T.inkSoft,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _PlaceCard extends StatelessWidget {
@@ -743,11 +766,14 @@ class _NoImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const ColoredBox(
-    color: T.brandMist,
-    child: Center(
-      child: PetPassMascot(size: 76, kind: PetPassMascotKind.sitting),
-    ),
-  );
+        color: T.brandMist,
+        child: Center(
+          child: PetPassMascot(
+            size: 76,
+            kind: PetPassMascotKind.sitting,
+          ),
+        ),
+      );
 }
 
 class _EmptyResult extends StatelessWidget {
