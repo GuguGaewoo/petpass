@@ -10,6 +10,7 @@ import '../../app_state.dart';
 import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../detail/place_detail_screen.dart';
+import '../widgets/petpass_decor.dart';
 import '../widgets/verdict_badge.dart';
 
 class SavedScreen extends StatelessWidget {
@@ -274,16 +275,8 @@ class _EmptySaved extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
-              radius: 38,
-              backgroundColor: T.brandSoft,
-              child: Icon(
-                Icons.pets_rounded,
-                size: 38,
-                color: T.brand,
-              ),
-            ),
-            SizedBox(height: 17),
+            PetPassMascot(size: 106),
+            SizedBox(height: 18),
             Text(
               '아직 저장한 장소가 없어요',
               style: TextStyle(
