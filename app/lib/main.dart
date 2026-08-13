@@ -35,6 +35,11 @@ class _PetPassAppState extends State<PetPassApp> {
         scaffoldBackgroundColor: T.paper,
         useMaterial3: true,
       ),
+      // Navigator 위에 순수 장식 레이어를 올려 push 된 모든 화면에도
+      // 같은 발바닥 패턴이 보이게 한다. IgnorePointer라 입력에는 영향이 없다.
+      builder: (context, child) => PetPassBackdrop(
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: ListenableBuilder(
         listenable: _state,
         builder: (context, _) {
@@ -64,10 +69,7 @@ class _PetPassAppState extends State<PetPassApp> {
               ),
             );
           }
-          return PetPassBackdrop(
-            dense: true,
-            child: ProfileScreen(state: _state),
-          );
+          return ProfileScreen(state: _state);
         },
       ),
     );
