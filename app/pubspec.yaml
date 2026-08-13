@@ -25,3 +25,5 @@ flutter:
   assets:
     - assets/places.json
     - assets/neighbors.json
+    - assets/branding/
+    - assets/decor/
