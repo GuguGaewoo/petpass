@@ -10,6 +10,7 @@ import '../../app_state.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/pet_profile.dart';
 import '../search/search_screen.dart';
+import '../widgets/petpass_decor.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.state});
@@ -75,9 +76,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.fromLTRB(22, 14, 22, 34),
               children: [
                 const _TitleBar(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 const _PetAvatar(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 22),
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -316,18 +317,26 @@ class _TitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return const Column(
       children: [
-        Expanded(
-          child: Text(
-            '반려견 프로필',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamilyFallback: T.kr,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: T.ink,
-            ),
+        Text(
+          '반려견 프로필',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamilyFallback: T.kr,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: T.ink,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          '우리 아이에게 맞는 동반 조건을 확인해요',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamilyFallback: T.kr,
+            fontSize: 11.5,
+            color: T.mute,
           ),
         ),
       ],
@@ -340,36 +349,8 @@ class _PetAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 104,
-            height: 104,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: T.brandSoft,
-              border: Border.all(color: T.card, width: 5),
-              boxShadow: T.softShadow,
-            ),
-            child: const Icon(Icons.pets_rounded, size: 54, color: T.brand),
-          ),
-          Positioned(
-            right: -1,
-            bottom: 3,
-            child: Container(
-              width: 31,
-              height: 31,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: T.brand,
-              ),
-              child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+    return const Center(
+      child: PetPassMascot(size: 118),
     );
   }
 }
