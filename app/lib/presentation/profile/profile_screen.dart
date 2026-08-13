@@ -361,9 +361,10 @@ class _PetAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 138,
-        height: 138,
-        padding: const EdgeInsets.all(5),
+        width: 144,
+        height: 144,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: T.brandSoft,
           shape: BoxShape.circle,
@@ -371,7 +372,7 @@ class _PetAvatar extends StatelessWidget {
           boxShadow: T.softShadow,
         ),
         child: const PetPassMascot(
-          size: 128,
+          size: 108,
           kind: PetPassMascotKind.profile,
         ),
       ),
