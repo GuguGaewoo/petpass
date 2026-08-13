@@ -108,12 +108,10 @@ class _SheetState extends State<_Sheet> {
                 decoration: BoxDecoration(
                   color: T.brandSoft,
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.white),
+                  border: Border.all(color: T.card),
                 ),
-                child: const Icon(
-                  Icons.pets_rounded,
-                  size: 22,
-                  color: T.brand,
+                child: const Center(
+                  child: PetPassPawIcon(size: 22, color: T.brand),
                 ),
               ),
               const SizedBox(width: 11),
@@ -180,16 +178,16 @@ class _SheetState extends State<_Sheet> {
                 color: T.mute,
               ),
               filled: true,
-              fillColor: const Color(0xFFFFFCF7),
+              fillColor: T.paper,
               counterStyle: const TextStyle(fontSize: 11, color: T.mute),
               contentPadding: const EdgeInsets.all(14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(T.r),
-                borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
+                borderSide: const BorderSide(color: T.line),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(T.r),
-                borderSide: const BorderSide(color: Color(0xFFE9DFD3)),
+                borderSide: const BorderSide(color: T.line),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(T.r),
@@ -248,21 +246,13 @@ class _SheetState extends State<_Sheet> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: on ? T.brandSoft : const Color(0xFFFFFCF7),
+          color: on ? T.brandSoft : T.paper,
           border: Border.all(
-            color: on ? T.brand : const Color(0xFFE9DFD3),
+            color: on ? T.brand : T.line,
             width: on ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(T.rCard),
-          boxShadow: on
-              ? const [
-                  BoxShadow(
-                    color: Color(0x138B72C8),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ]
-              : null,
+          boxShadow: on ? T.softShadow : null,
         ),
         child: Row(
           children: [
@@ -343,7 +333,10 @@ class _SheetState extends State<_Sheet> {
         _grip(),
         const SizedBox(height: 30),
         if (ok)
-          const PetPassMascot(size: 92)
+          const PetPassMascot(
+            size: 96,
+            kind: PetPassMascotKind.sitting,
+          )
         else
           Container(
             width: 82,
