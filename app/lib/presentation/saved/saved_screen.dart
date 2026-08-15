@@ -38,14 +38,17 @@ class SavedScreen extends StatelessWidget {
                       child: saved.isEmpty
                           ? const _EmptySaved()
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                22,
+                                20,
+                                28,
+                              ),
                               itemCount: saved.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(height: T.gapCard),
-                              itemBuilder: (context, i) => _SavedCard(
-                                state: state,
-                                place: saved[i],
-                              ),
+                              itemBuilder: (context, i) =>
+                                  _SavedCard(state: state, place: saved[i]),
                             ),
                     ),
                   ],
@@ -339,11 +342,7 @@ class _FavoriteBubble extends StatelessWidget {
         child: const SizedBox(
           width: 36,
           height: 36,
-          child: Icon(
-            Icons.favorite_rounded,
-            size: 20,
-            color: T.brandDeep,
-          ),
+          child: Icon(Icons.favorite_rounded, size: 20, color: T.brandDeep),
         ),
       ),
     );
@@ -361,10 +360,7 @@ class _EmptySaved extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            PetPassMascot(
-              size: 112,
-              kind: PetPassMascotKind.sleeping,
-            ),
+            PetPassMascot(size: 112, kind: PetPassMascotKind.sleeping),
             SizedBox(height: 18),
             Text(
               '아직 저장한 장소가 없어요',

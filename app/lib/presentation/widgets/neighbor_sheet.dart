@@ -192,11 +192,7 @@ class _Sheet extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.place_outlined,
-                      size: 17,
-                      color: T.brand,
-                    ),
+                    const Icon(Icons.place_outlined, size: 17, color: T.brand),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -240,11 +236,7 @@ class _Sheet extends StatelessWidget {
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 17,
-                      color: T.brand,
-                    ),
+                    Icon(Icons.info_outline_rounded, size: 17, color: T.brand),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(

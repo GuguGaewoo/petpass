@@ -199,10 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                PetPassPrimaryButton(
-                  label: '장소 찾아보기',
-                  onPressed: _submit,
-                ),
+                PetPassPrimaryButton(label: '장소 찾아보기', onPressed: _submit),
                 const SizedBox(height: 16),
                 const Text(
                   '입력한 정보는 이 기기에만 저장되며 어디에도 전송하지 않습니다.',
@@ -222,39 +219,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(
-          fontFamilyFallback: T.kr,
-          color: T.mute,
-          fontSize: 14,
-        ),
-        filled: true,
-        fillColor: T.paper,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(T.r),
-          borderSide: const BorderSide(color: T.line),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(T.r),
-          borderSide: const BorderSide(color: T.line),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(T.r),
-          borderSide: const BorderSide(color: T.brand, width: 1.5),
-        ),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(
+      fontFamilyFallback: T.kr,
+      color: T.mute,
+      fontSize: 14,
+    ),
+    filled: true,
+    fillColor: T.paper,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.line),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.line),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.brand, width: 1.5),
+    ),
+  );
 
   Widget _label(String s) => Text(
-        s,
-        style: const TextStyle(
-          fontFamilyFallback: T.kr,
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-          color: T.ink,
-        ),
-      );
+    s,
+    style: const TextStyle(
+      fontFamilyFallback: T.kr,
+      fontSize: 13,
+      fontWeight: FontWeight.w800,
+      color: T.ink,
+    ),
+  );
 
   Widget _toggle({
     required IconData icon,
@@ -371,10 +367,7 @@ class _PetAvatar extends StatelessWidget {
           border: Border.all(color: T.card, width: 4),
           boxShadow: T.softShadow,
         ),
-        child: const PetPassMascot(
-          size: 108,
-          kind: PetPassMascotKind.profile,
-        ),
+        child: const PetPassMascot(size: 108, kind: PetPassMascotKind.profile),
       ),
     );
   }

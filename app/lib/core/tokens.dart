@@ -78,11 +78,7 @@ class T {
 
   // ── 그림자 ──
   static const softShadow = <BoxShadow>[
-    BoxShadow(
-      color: Color(0x120C0713),
-      blurRadius: 22,
-      offset: Offset(0, 8),
-    ),
+    BoxShadow(color: Color(0x120C0713), blurRadius: 22, offset: Offset(0, 8)),
   ];
 
   // ── 글자 크기 ──

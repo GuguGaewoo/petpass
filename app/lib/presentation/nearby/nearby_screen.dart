@@ -109,11 +109,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
                 const CircleAvatar(
                   radius: 36,
                   backgroundColor: T.brandSoft,
-                  child: Icon(
-                    Icons.pets_rounded,
-                    size: 34,
-                    color: T.brand,
-                  ),
+                  child: Icon(Icons.pets_rounded, size: 34, color: T.brand),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -231,11 +227,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.pets_rounded,
-                        size: 13,
-                        color: T.brand,
-                      ),
+                      const Icon(Icons.pets_rounded, size: 13, color: T.brand),
                       const SizedBox(width: 5),
                       Text(
                         i,
