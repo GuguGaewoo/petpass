@@ -5,6 +5,9 @@
 # 그냥 flutter build apk 를 돌리면 지도 키가 빈 문자열이 되어
 # 앱에서 "지도 키가 설정되지 않았습니다" 가 뜬다.
 #
+# 런처 아이콘은 assets/branding/app_icon_1024.png 를 기준으로
+# flutter_launcher_icons 가 Android/iOS 네이티브 리소스를 생성한다.
+#
 # 사용:
 #   ./build_apk.sh           디버그 (실기기 확인용)
 #   ./build_apk.sh release   릴리스 (스토어 제출용, ABI 별로 분리)
@@ -18,7 +21,9 @@ if [ -f ../.env ]; then
 fi
 
 if [ -z "${NAVER_MAP_CLIENT_ID}" ]; then
-  echo "경고: NAVER_MAP_CLIENT_ID 가 비어 있습니다. 지도가 표시되지 않습니다."
+  echo "오류: NAVER_MAP_CLIENT_ID 가 비어 있습니다." >&2
+  echo "      ~/petpass/.env 를 확인하세요. 지도 없는 APK 는 만들지 않습니다." >&2
+  exit 1
 fi
 
 MODE="${1:-debug}"
@@ -33,7 +38,9 @@ if [ "${MODE}" = "release" ]; then
 fi
 
 flutter build apk --"${MODE}" ${EXTRA} \
-  --dart-define=NAVER_MAP_CLIENT_ID="${NAVER_MAP_CLIENT_ID}"
+  --dart-define=NAVER_MAP_CLIENT_ID="${NAVER_MAP_CLIENT_ID}" \
+  --dart-define=SUPABASE_URL="${SUPABASE_URL}" \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY}"
 
 echo ""
 ls -lh build/app/outputs/flutter-apk/*"${MODE}"*.apk

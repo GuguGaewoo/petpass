@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/place_repository.dart';
+import 'data/report_repository.dart';
 import 'domain/models/neighbor.dart';
 import 'domain/models/pet_profile.dart';
 import 'domain/models/place_constraint.dart';
@@ -19,6 +20,7 @@ class AppState extends ChangeNotifier {
   static const _savedKey = 'saved_place_ids';
 
   final _repo = PlaceRepository();
+  final _reports = ReportRepository();
   final _engine = const VerdictEngine();
   final _recommender = const NearbyRecommender();
 
@@ -52,6 +54,9 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       _error = '장소 데이터를 불러오지 못했습니다. ($e)';
     }
+    // 제보 저장소는 부가 기능이다. 실패해도 앱은 정상 동작한다.
+    await _reports.init();
+
     // 저장 목록은 실패해도 앱이 동작해야 한다. 핵심 기능이 아니다.
     try {
       _prefs = await SharedPreferences.getInstance();
@@ -114,6 +119,25 @@ class AppState extends ChangeNotifier {
       pet: _pet ?? _defaultPet,
     );
   }
+
+  // ── 현장 제보 (F-10) ──────────────────────────────────
+  /// 제보 기능을 쓸 수 있는가. 거짓이면 화면에서 버튼을 감춘다.
+  bool get canReport => _reports.isAvailable;
+
+  Future<bool> submitReport({
+    required PlaceConstraint place,
+    required ReportKind kind,
+    String body = '',
+  }) => _reports.submit(
+    contentId: place.contentId,
+    placeTitle: place.title,
+    kind: kind,
+    body: body,
+  );
+
+  /// 장소별 제보 집계. 실패하면 null 이며 화면은 표시하지 않는다.
+  Future<ReportSummary?> reportSummaryOf(String contentId) =>
+      _reports.summaryOf(contentId);
 
   /// 프로필을 아직 안 넣었을 때의 기준. 제약 없는 조회용.
   static final _defaultPet = PetProfile.byWeight('반려동물', 5);
