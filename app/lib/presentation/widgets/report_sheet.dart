@@ -81,15 +81,15 @@ class _SheetState extends State<_Sheet> {
   }
 
   Widget _grip() => Center(
-        child: Container(
-          width: 38,
-          height: 4,
-          decoration: BoxDecoration(
-            color: T.lineStrong,
-            borderRadius: BorderRadius.circular(T.rPill),
-          ),
-        ),
-      );
+    child: Container(
+      width: 38,
+      height: 4,
+      decoration: BoxDecoration(
+        color: T.lineStrong,
+        borderRadius: BorderRadius.circular(T.rPill),
+      ),
+    ),
+  );
 
   Widget _form() {
     return SingleChildScrollView(
@@ -110,9 +110,7 @@ class _SheetState extends State<_Sheet> {
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(color: T.card),
                 ),
-                child: const Center(
-                  child: PetPassPawIcon(size: 22),
-                ),
+                child: const Center(child: PetPassPawIcon(size: 22)),
               ),
               const SizedBox(width: 11),
               Expanded(
@@ -211,11 +209,7 @@ class _SheetState extends State<_Sheet> {
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.lock_outline_rounded,
-                  size: 15,
-                  color: T.brand,
-                ),
+                Icon(Icons.lock_outline_rounded, size: 15, color: T.brand),
                 SizedBox(width: 7),
                 Expanded(
                   child: Text(
@@ -247,10 +241,7 @@ class _SheetState extends State<_Sheet> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: on ? T.brandSoft : T.paper,
-          border: Border.all(
-            color: on ? T.brand : T.line,
-            width: on ? 1.5 : 1,
-          ),
+          border: Border.all(color: on ? T.brand : T.line, width: on ? 1.5 : 1),
           borderRadius: BorderRadius.circular(T.rCard),
           boxShadow: on ? T.softShadow : null,
         ),
@@ -333,10 +324,7 @@ class _SheetState extends State<_Sheet> {
         _grip(),
         const SizedBox(height: 30),
         if (ok)
-          const PetPassMascot(
-            size: 96,
-            kind: PetPassMascotKind.sitting,
-          )
+          const PetPassMascot(size: 96, kind: PetPassMascotKind.sitting)
         else
           Container(
             width: 82,

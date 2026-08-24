@@ -199,9 +199,9 @@ class PlaceDetailScreen extends StatelessWidget {
                         child: Theme(
                           data: Theme.of(context).copyWith(
                             dividerColor: Colors.transparent,
-                            colorScheme: Theme.of(context).colorScheme.copyWith(
-                              primary: T.brand,
-                            ),
+                            colorScheme: Theme.of(
+                              context,
+                            ).colorScheme.copyWith(primary: T.brand),
                           ),
                           child: Material(
                             color: Colors.transparent,
@@ -209,7 +209,9 @@ class PlaceDetailScreen extends StatelessWidget {
                               tilePadding: EdgeInsets.zero,
                               expandedCrossAxisAlignment:
                                   CrossAxisAlignment.start,
-                              childrenPadding: const EdgeInsets.only(bottom: 12),
+                              childrenPadding: const EdgeInsets.only(
+                                bottom: 12,
+                              ),
                               leading: const Icon(
                                 Icons.description_outlined,
                                 size: 19,
@@ -228,7 +230,9 @@ class PlaceDetailScreen extends StatelessWidget {
                                 for (final e in place.sourceText.entries)
                                   if (e.value.trim().isNotEmpty)
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -677,9 +681,7 @@ class _Header extends StatelessWidget {
               child: IconButton(
                 onPressed: () => state.toggleSaved(place.contentId),
                 icon: Icon(
-                  on
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
+                  on ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                   size: 22,
                   color: on ? T.brand : fg,
                 ),
@@ -699,9 +701,7 @@ class _Header extends StatelessWidget {
         color: onImage ? Colors.white.withValues(alpha: .20) : T.card,
         shape: BoxShape.circle,
         border: Border.all(
-          color: onImage
-              ? Colors.white.withValues(alpha: .22)
-              : T.line,
+          color: onImage ? Colors.white.withValues(alpha: .22) : T.line,
         ),
       ),
       child: child,

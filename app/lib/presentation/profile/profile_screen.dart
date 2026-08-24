@@ -23,6 +23,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _name = TextEditingController();
+
+  /// 이름이 입력되었는가. 공백만 넣은 경우도 미입력으로 본다.
+  bool _hasName = false;
   double _weight = 5;
   DogSize? _sizeOverride;
   bool _fierce = false;
@@ -34,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final p = widget.state.pet;
     if (p != null) {
       _name.text = p.name;
+      _hasName = p.name.trim().isNotEmpty;
       _weight = p.weightKg;
       _sizeOverride = p.size;
       _fierce = p.isFierce;
@@ -52,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _submit() {
     widget.state.setPet(
       PetProfile(
-        name: _name.text.trim().isEmpty ? '우리 아이' : _name.text.trim(),
+        name: _name.text.trim(),
         weightKg: _weight,
         size: _size,
         isFierce: _fierce,
@@ -94,6 +98,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 7),
                       TextField(
                         controller: _name,
+                        onChanged: (v) {
+                          final has = v.trim().isNotEmpty;
+                          if (has != _hasName) {
+                            setState(() => _hasName = has);
+                          }
+                        },
                         style: const TextStyle(
                           fontFamilyFallback: T.kr,
                           fontSize: 15.5,
@@ -201,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20),
                 PetPassPrimaryButton(
                   label: '장소 찾아보기',
-                  onPressed: _submit,
+                  onPressed: _hasName ? _submit : null,
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -222,39 +232,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(
-          fontFamilyFallback: T.kr,
-          color: T.mute,
-          fontSize: 14,
-        ),
-        filled: true,
-        fillColor: T.paper,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(T.r),
-          borderSide: const BorderSide(color: T.line),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(T.r),
-          borderSide: const BorderSide(color: T.line),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(T.r),
-          borderSide: const BorderSide(color: T.brand, width: 1.5),
-        ),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(
+      fontFamilyFallback: T.kr,
+      color: T.mute,
+      fontSize: 14,
+    ),
+    filled: true,
+    fillColor: T.paper,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.line),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.line),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.brand, width: 1.5),
+    ),
+  );
 
   Widget _label(String s) => Text(
-        s,
-        style: const TextStyle(
-          fontFamilyFallback: T.kr,
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-          color: T.ink,
-        ),
-      );
+    s,
+    style: const TextStyle(
+      fontFamilyFallback: T.kr,
+      fontSize: 13,
+      fontWeight: FontWeight.w800,
+      color: T.ink,
+    ),
+  );
 
   Widget _toggle({
     required IconData icon,
@@ -371,10 +380,7 @@ class _PetAvatar extends StatelessWidget {
           border: Border.all(color: T.card, width: 4),
           boxShadow: T.softShadow,
         ),
-        child: const PetPassMascot(
-          size: 108,
-          kind: PetPassMascotKind.profile,
-        ),
+        child: const PetPassMascot(size: 108, kind: PetPassMascotKind.profile),
       ),
     );
   }

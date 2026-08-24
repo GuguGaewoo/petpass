@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_state.dart';
 import '../../core/area_codes.dart';
+import '../../core/hangul.dart';
 import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
@@ -40,9 +41,16 @@ class _SearchScreenState extends State<SearchScreen> {
     final list = s.places.where((p) {
       if (_area != null && p.areaCode != _area) return false;
       if (_type != null && p.contentType != _type) return false;
-      if (_query.isNotEmpty &&
-          !p.title.contains(_query) &&
-          !p.address.contains(_query)) {
+      // 이름은 초성 검색을 지원한다. "ㄴㅅㄱ" 로 남산골한옥마을을 찾는다.
+      // 한글 입력 중에는 "남산ㄱ" 같은 중간 상태가 계속 생기므로
+      // 완성 글자와 초성을 섞어도 매칭된다.
+      //
+      // 주소는 초성 대상에서 뺀다. 시도·시군구가 반복되어 오탐이 늘어난다.
+      // 이름만 검색한다. 초성과 완성 글자를 섞어도 매칭된다.
+      //
+      // 주소는 대상에서 뺐다. "남" 한 글자에 경상남도·충청남도가 모두
+      // 걸려 결과가 164곳까지 늘어난다. 지역은 시도 필터가 담당한다.
+      if (_query.isNotEmpty && !matchesKorean(p.title, _query)) {
         return false;
       }
       return true;
@@ -84,35 +92,32 @@ class _SearchScreenState extends State<SearchScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          if (index.isOdd) {
-                            return const SizedBox(height: T.gapCard);
-                          }
-                          final e = judged[index ~/ 2];
-                          return ListenableBuilder(
-                            listenable: s,
-                            builder: (context, _) {
-                              return _PlaceCard(
-                                place: e.place,
-                                verdict: e.verdict,
-                                saved: s.isSaved(e.place.contentId),
-                                onSavedToggle: () =>
-                                    s.toggleSaved(e.place.contentId),
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => PlaceDetailScreen(
-                                      state: s,
-                                      place: e.place,
-                                    ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        if (index.isOdd) {
+                          return const SizedBox(height: T.gapCard);
+                        }
+                        final e = judged[index ~/ 2];
+                        return ListenableBuilder(
+                          listenable: s,
+                          builder: (context, _) {
+                            return _PlaceCard(
+                              place: e.place,
+                              verdict: e.verdict,
+                              saved: s.isSaved(e.place.contentId),
+                              onSavedToggle: () =>
+                                  s.toggleSaved(e.place.contentId),
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PlaceDetailScreen(
+                                    state: s,
+                                    place: e.place,
                                   ),
                                 ),
-                              );
-                            },
-                          );
-                        },
-                        childCount: judged.length * 2 - 1,
-                      ),
+                              ),
+                            );
+                          },
+                        );
+                      }, childCount: judged.length * 2 - 1),
                     ),
                   ),
               ],
@@ -160,7 +165,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 borderRadius: BorderRadius.circular(T.rPill),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: n > 0 ? T.brandSoft : T.card,
                     borderRadius: BorderRadius.circular(T.rPill),
@@ -210,7 +218,7 @@ class _SearchScreenState extends State<SearchScreen> {
           color: T.ink,
         ),
         decoration: InputDecoration(
-          hintText: '장소 이름이나 주소로 검색',
+          hintText: '장소 이름 또는 초성으로 검색',
           hintStyle: const TextStyle(
             fontFamilyFallback: T.kr,
             color: T.mute,
@@ -289,7 +297,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     _filter(
                       e.value,
                       _area == e.key,
-                      () => setState(() => _area = _area == e.key ? null : e.key),
+                      () =>
+                          setState(() => _area = _area == e.key ? null : e.key),
                     ),
                 ],
               )
@@ -349,17 +358,17 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _groupLabel(String label) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontFamilyFallback: T.kr,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w800,
-            color: T.ink,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      label,
+      style: const TextStyle(
+        fontFamilyFallback: T.kr,
+        fontSize: 12.5,
+        fontWeight: FontWeight.w800,
+        color: T.ink,
+      ),
+    ),
+  );
 
   Widget _areaToggle() {
     return GestureDetector(
@@ -487,14 +496,14 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   IconData _typeIcon(String type) => switch (type) {
-        '관광지' => Icons.landscape_outlined,
-        '숙박' => Icons.bed_outlined,
-        '음식점' => Icons.restaurant_outlined,
-        '레포츠' => Icons.directions_run_rounded,
-        '쇼핑' => Icons.shopping_bag_outlined,
-        '문화시설' => Icons.museum_outlined,
-        _ => Icons.place_outlined,
-      };
+    '관광지' => Icons.landscape_outlined,
+    '숙박' => Icons.bed_outlined,
+    '음식점' => Icons.restaurant_outlined,
+    '레포츠' => Icons.directions_run_rounded,
+    '쇼핑' => Icons.shopping_bag_outlined,
+    '문화시설' => Icons.museum_outlined,
+    _ => Icons.place_outlined,
+  };
 }
 
 class _SearchTitle extends StatelessWidget {
@@ -521,7 +530,7 @@ class _SearchTitle extends StatelessWidget {
             ),
             SizedBox(height: 5),
             Text(
-              '장소 이름, 주소와 실제 동반 조건을 함께 확인해요.',
+              '장소 이름으로 찾고, 실제 동반 조건을 함께 확인해요.',
               style: TextStyle(
                 fontFamilyFallback: T.kr,
                 fontSize: 12.5,
@@ -766,14 +775,11 @@ class _NoImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const ColoredBox(
-        color: T.brandMist,
-        child: Center(
-          child: PetPassMascot(
-            size: 76,
-            kind: PetPassMascotKind.sitting,
-          ),
-        ),
-      );
+    color: T.brandMist,
+    child: Center(
+      child: PetPassMascot(size: 76, kind: PetPassMascotKind.sitting),
+    ),
+  );
 }
 
 class _EmptyResult extends StatelessWidget {

@@ -35,11 +35,7 @@ int _cacheWidth(BuildContext context, double logicalWidth, {int max = 768}) {
 /// 화면 가장자리만 장식하는 발바닥 패턴.
 /// 원본 PNG의 말랑한 질감은 유지하되 작은 크기로만 디코딩한다.
 class PetPassBackdrop extends StatelessWidget {
-  const PetPassBackdrop({
-    super.key,
-    required this.child,
-    this.dense = false,
-  });
+  const PetPassBackdrop({super.key, required this.child, this.dense = false});
 
   final Widget child;
   final bool dense;
@@ -50,9 +46,7 @@ class PetPassBackdrop extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         child,
-        IgnorePointer(
-          child: _PawEdgePattern(opacity: dense ? .12 : .075),
-        ),
+        IgnorePointer(child: _PawEdgePattern(opacity: dense ? .12 : .075)),
       ],
     );
   }
@@ -127,11 +121,11 @@ class PetPassMascot extends StatelessWidget {
   final PetPassMascotKind kind;
 
   String get _asset => switch (kind) {
-        PetPassMascotKind.profile => PetPassAssets.mascotProfile,
-        PetPassMascotKind.sitting => PetPassAssets.mascotSitting,
-        PetPassMascotKind.travel => PetPassAssets.mascotTravel,
-        PetPassMascotKind.sleeping => PetPassAssets.mascotSleeping,
-      };
+    PetPassMascotKind.profile => PetPassAssets.mascotProfile,
+    PetPassMascotKind.sitting => PetPassAssets.mascotSitting,
+    PetPassMascotKind.travel => PetPassAssets.mascotTravel,
+    PetPassMascotKind.sleeping => PetPassAssets.mascotSleeping,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -206,11 +200,7 @@ class PetPassMascot extends StatelessWidget {
 /// 작은 UI에서도 원본 PNG의 색감과 명암을 그대로 사용하는 발바닥.
 /// cacheWidth를 96px 이하로 제한해 1254px 원본을 그대로 디코딩하지 않는다.
 class PetPassPawIcon extends StatelessWidget {
-  const PetPassPawIcon({
-    super.key,
-    this.size = 18,
-    this.opacity = 1,
-  });
+  const PetPassPawIcon({super.key, this.size = 18, this.opacity = 1});
 
   final double size;
   final double opacity;
@@ -282,10 +272,7 @@ class PetPassPrimaryButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 9),
-            PetPassPawIcon(
-              size: 19,
-              opacity: onPressed == null ? .35 : 1,
-            ),
+            PetPassPawIcon(size: 19, opacity: onPressed == null ? .35 : 1),
           ],
         ),
       ),
