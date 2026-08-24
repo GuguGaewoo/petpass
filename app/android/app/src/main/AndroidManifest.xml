@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 지도 타일·제보 전송에 필요. 릴리스는 debug 매니페스트를 쓰지 않는다. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="petpass"
         android:name="${applicationName}"

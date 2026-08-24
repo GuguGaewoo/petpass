@@ -26,3 +26,8 @@ app/android/.gradle/
 .idea/
 .vscode/
 _tmp/
+app/keys/
+app/android/key.properties
+
+problems-report.htmlapp/android/build/
+problems-report.html

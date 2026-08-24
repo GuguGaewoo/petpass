@@ -44,6 +44,10 @@ window.petpassMap = {
       zoom: zoom,
       // 좌표를 외부로 보내는 기능은 쓰지 않는다. 지도 표시 전용이다.
       mapDataControl: false,
+      // 페이지 스크롤 중 지도 위를 지나면 휠이 확대로 먹힌다.
+      // 상세 화면의 지도는 위치 확인용이므로 확대를 막는다.
+      scrollWheel: false,
+      pinchZoom: false,
       scaleControl: true,
       logoControl: true,
     });

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'app_state.dart';
 import 'core/tokens.dart';
 import 'presentation/profile/profile_screen.dart';
+import 'presentation/widgets/petpass_decor.dart';
 
 void main() => runApp(const PetPassApp());
 
@@ -30,17 +31,21 @@ class _PetPassAppState extends State<PetPassApp> {
       debugShowCheckedModeBanner: false,
       scrollBehavior: const _AllDeviceScroll(),
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: T.go),
+        colorScheme: ColorScheme.fromSeed(seedColor: T.brand),
         scaffoldBackgroundColor: T.paper,
         useMaterial3: true,
       ),
+      // Navigator 위에 순수 장식 레이어를 올려 push 된 모든 화면에도
+      // 같은 발바닥 패턴이 보이게 한다. IgnorePointer라 입력에는 영향이 없다.
+      builder: (context, child) =>
+          PetPassBackdrop(child: child ?? const SizedBox.shrink()),
       home: ListenableBuilder(
         listenable: _state,
         builder: (context, _) {
           if (_state.loading) {
             return const Scaffold(
               backgroundColor: T.paper,
-              body: Center(child: CircularProgressIndicator(color: T.go)),
+              body: Center(child: CircularProgressIndicator(color: T.brand)),
             );
           }
           if (_state.error != null) {
@@ -70,8 +75,6 @@ class _PetPassAppState extends State<PetPassApp> {
   }
 }
 
-/// Flutter Web 은 기본적으로 터치와 트랙패드만 드래그 스크롤로 인식한다.
-/// 데스크톱 브라우저에서 마우스로 가로 목록을 밀 수 없어 필터가 잘려 보인다.
 class _AllDeviceScroll extends MaterialScrollBehavior {
   const _AllDeviceScroll();
 
