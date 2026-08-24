@@ -26,3 +26,5 @@ app/android/.gradle/
 .idea/
 .vscode/
 _tmp/
+*.jks
+problems-report.html
