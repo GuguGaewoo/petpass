@@ -130,7 +130,14 @@ class _WebMapState extends State<_WebMap> {
         return;
       }
       // 플랫폼 뷰가 DOM 에 붙은 뒤에 그려야 한다.
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      //
+      // 고정 지연으로는 부족하다. 상세 화면처럼 지도가 스크롤 아래에 있으면
+      // Flutter 가 뷰를 늦게 붙여, 지정한 시각에 요소가 아직 없다.
+      // JS 쪽 render 는 요소가 없으면 조용히 빠져나가므로 지도가 비어 보인다.
+      final ok = await _waitForElement(_elId);
+      if (!ok || !mounted) {
+        return;
+      }
       if (!mounted) {
         return;
       }
@@ -160,6 +167,22 @@ class _WebMapState extends State<_WebMap> {
         setState(() => _error = '지도를 불러오지 못했습니다');
       }
     }
+  }
+
+  /// 요소가 DOM 에 나타날 때까지 짧게 기다린다.
+  /// 최대 3초. 그 안에 안 나타나면 화면에 없는 것으로 본다.
+  Future<bool> _waitForElement(String id) async {
+    for (var i = 0; i < 60; i++) {
+      if (web.document.getElementById(id) != null) {
+        await Future<void>.delayed(const Duration(milliseconds: 32));
+        return true;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      if (!mounted) {
+        return false;
+      }
+    }
+    return false;
   }
 
   @override
