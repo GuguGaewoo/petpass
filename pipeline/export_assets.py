@@ -146,7 +146,10 @@ def main():
     payload = {
         "schema_version": rows[0].get("schema_version", 2),
         "count": len(slimmed),
-        "source": "한국관광공사 TourAPI (KorPetTourService2)",
+        # 공모전 규정상 서비스 내에서 공사를 지칭하는 명칭을 쓸 수 없다.
+        # 이 값은 앱의 sourceLabel 로 전달되어 화면에 노출될 수 있으므로
+        # 기관명 없이 표기한다.
+        "source": "공공 관광데이터",
         "places": slimmed,
     }
 
