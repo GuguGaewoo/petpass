@@ -2,17 +2,14 @@
 .env
 *.env
 !.env.example
-
 # ── 수집 원본 데이터 (재생성 가능, 용량 큼) ────────
 pipeline/data/
 *.tmp
-
 # ── Python ───────────────────────────────────────
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-
 # ── Flutter ──────────────────────────────────────
 app/build/
 app/.dart_tool/
@@ -20,11 +17,13 @@ app/.flutter-plugins*
 app/.packages
 app/ios/Pods/
 app/android/.gradle/
-
 # ── OS / IDE ─────────────────────────────────────
 .DS_Store
 .idea/
 .vscode/
 _tmp/
 *.jks
+app/keys/
+app/android/key.properties
+app/android/build/
 problems-report.html

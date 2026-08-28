@@ -11,15 +11,36 @@ dependencies:
     sdk: flutter
   flutter_naver_map: ^1.4.4
   shared_preferences: ^2.5.5
+  supabase_flutter: ^2.17.1
+  url_launcher: ^6.3.2
   web: ^1.1.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
+
+flutter_launcher_icons:
+  android: true
+  # ios 플랫폼이 없다. true 로 두면 Assets.xcassets 를 찾다 예외로 죽는다.
+  ios: false
+  image_path: assets/branding/app_icon_1024.png
+  adaptive_icon_background: "#FFF9F1"
+  adaptive_icon_foreground: assets/branding/app_icon_1024.png
+  adaptive_icon_foreground_inset: 18
+  remove_alpha_ios: true
+  background_color_ios: "#FFF9F1"
+  web:
+    generate: true
+    image_path: assets/branding/app_icon_512.png
+    background_color: "#FFF9F1"
+    theme_color: "#8B72C8"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/places.json
     - assets/neighbors.json
+    - assets/branding/
+    - assets/decor/

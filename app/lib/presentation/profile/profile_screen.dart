@@ -1,7 +1,7 @@
 /// 반려동물 프로필 입력.
 ///
-/// 체중 눈금에 10kg 를 표시한다. 전국 632건 실사에서 체중 상한이 10kg 에
-/// 몰려 있어, 사용자가 그 경계를 인지하는 것이 판정 이해에 직접 도움이 된다.
+/// 기존 프로필 저장/판정 흐름은 그대로 두고 PetPass 시안의
+/// 아이보리·라벤더·둥근 카드 스타일만 적용한다.
 library;
 
 import 'package:flutter/material.dart';
@@ -10,6 +10,7 @@ import '../../app_state.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/pet_profile.dart';
 import '../search/search_screen.dart';
+import '../widgets/petpass_decor.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.state});
@@ -22,6 +23,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _name = TextEditingController();
+
+  /// 이름이 입력되었는가. 공백만 넣은 경우도 미입력으로 본다.
+  bool _hasName = false;
   double _weight = 5;
   DogSize? _sizeOverride;
   bool _fierce = false;
@@ -33,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final p = widget.state.pet;
     if (p != null) {
       _name.text = p.name;
+      _hasName = p.name.trim().isNotEmpty;
       _weight = p.weightKg;
       _sizeOverride = p.size;
       _fierce = p.isFierce;
@@ -51,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _submit() {
     widget.state.setPet(
       PetProfile(
-        name: _name.text.trim().isEmpty ? '우리 아이' : _name.text.trim(),
+        name: _name.text.trim(),
         weightKg: _weight,
         size: _size,
         isFierce: _fierce,
@@ -72,149 +77,150 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
+              padding: const EdgeInsets.fromLTRB(22, 12, 22, 36),
               children: [
-                const Text(
-                  '펫패스',
-                  style: TextStyle(
-                    fontFamilyFallback: T.kr,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1,
-                    color: T.ink,
+                const _TitleBar(),
+                const SizedBox(height: 12),
+                const _PetAvatar(),
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: T.card,
+                    borderRadius: BorderRadius.circular(T.rCard),
+                    border: Border.all(color: T.line),
+                    boxShadow: T.softShadow,
                   ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  '반려동물과 갈 수 있는 곳인지 미리 확인하세요',
-                  style: TextStyle(
-                    fontFamilyFallback: T.kr,
-                    fontSize: 14.5,
-                    color: T.inkSoft,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 36),
-
-                _label('이름'),
-                TextField(
-                  controller: _name,
-                  style: const TextStyle(
-                    fontFamilyFallback: T.kr,
-                    fontSize: 16,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '우리 아이',
-                    filled: true,
-                    fillColor: T.card,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 14,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(T.r),
-                      borderSide: const BorderSide(color: T.line),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(T.r),
-                      borderSide: const BorderSide(color: T.line),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                _label('체중'),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      _weight.toStringAsFixed(1),
-                      style: T.mono.copyWith(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w700,
-                        color: T.ink,
-                        height: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('이름'),
+                      const SizedBox(height: 7),
+                      TextField(
+                        controller: _name,
+                        onChanged: (v) {
+                          final has = v.trim().isNotEmpty;
+                          if (has != _hasName) {
+                            setState(() => _hasName = has);
+                          }
+                        },
+                        style: const TextStyle(
+                          fontFamilyFallback: T.kr,
+                          fontSize: 15.5,
+                          color: T.ink,
+                        ),
+                        decoration: _inputDecoration('이름을 입력해주세요'),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'kg',
-                      style: TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 16,
-                        color: T.inkSoft,
+                      const SizedBox(height: 23),
+                      Row(
+                        children: [
+                          _label('체중'),
+                          const Spacer(),
+                          Text(
+                            '${_weight.toStringAsFixed(1)} kg',
+                            style: T.mono.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: T.ink,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      _size.label,
-                      style: const TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 14,
-                        color: T.inkSoft,
+                      const SizedBox(height: 4),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: T.brand,
+                          inactiveTrackColor: T.line,
+                          thumbColor: T.brand,
+                          overlayColor: T.brandSoft,
+                          trackHeight: 4,
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 7,
+                          ),
+                        ),
+                        child: Slider(
+                          value: _weight,
+                          min: 0.5,
+                          max: 45,
+                          divisions: 89,
+                          onChanged: (v) => setState(() {
+                            _weight = v;
+                            _sizeOverride = null;
+                          }),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Slider(
-                  value: _weight,
-                  min: 0.5,
-                  max: 45,
-                  divisions: 89,
-                  activeColor: T.go,
-                  inactiveColor: T.line,
-                  onChanged: (v) => setState(() {
-                    _weight = v;
-                    _sizeOverride = null;
-                  }),
-                ),
-                _weightRuler(),
-                const SizedBox(height: 28),
-
-                _label('해당하면 알려주세요'),
-                _check(
-                  value: _guideDog,
-                  onChanged: (v) => setState(() => _guideDog = v),
-                  title: '장애인 보조견입니다',
-                  note: '보조견은 법으로 출입이 보장되어, 체중·견종 제한을 적용하지 않습니다',
-                ),
-                _check(
-                  value: _fierce,
-                  onChanged: (v) => setState(() => _fierce = v),
-                  title: '맹견으로 분류됩니다',
-                  note: '도사견, 아메리칸 핏불테리어 등',
-                ),
-                const SizedBox(height: 36),
-
-                SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: T.ink,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(T.r),
+                      Row(
+                        children: [
+                          Text(
+                            '0.5kg',
+                            style: T.mono.copyWith(
+                              fontSize: 10.5,
+                              color: T.mute,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: T.brandMist,
+                              borderRadius: BorderRadius.circular(T.rPill),
+                              border: Border.all(color: T.brandSoft),
+                            ),
+                            child: Text(
+                              _size.label,
+                              style: const TextStyle(
+                                fontFamilyFallback: T.kr,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: T.brandDeep,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '45kg',
+                            style: T.mono.copyWith(
+                              fontSize: 10.5,
+                              color: T.mute,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: const Text(
-                      '장소 찾아보기',
-                      style: TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(height: 20),
+                      _toggle(
+                        icon: Icons.warning_amber_rounded,
+                        title: '맹견 여부',
+                        note: '맹견에 해당하면 켜주세요',
+                        value: _fierce,
+                        onChanged: (v) => setState(() => _fierce = v),
                       ),
-                    ),
+                      const Divider(height: 1, color: T.line),
+                      _toggle(
+                        icon: Icons.volunteer_activism_outlined,
+                        title: '보조견(안내견) 여부',
+                        note: '보조견은 별도 기준으로 판정합니다',
+                        value: _guideDog,
+                        onChanged: (v) => setState(() => _guideDog = v),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
+                PetPassPrimaryButton(
+                  label: '장소 찾아보기',
+                  onPressed: _hasName ? _submit : null,
+                ),
+                const SizedBox(height: 16),
                 const Text(
                   '입력한 정보는 이 기기에만 저장되며 어디에도 전송하지 않습니다.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamilyFallback: T.kr,
-                    fontSize: 12,
-                    color: T.inkSoft,
+                    fontSize: 11.5,
+                    color: T.mute,
                   ),
                 ),
               ],
@@ -225,119 +231,156 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// 10kg 눈금. 데이터상 판정이 가장 많이 갈리는 지점이라 표시한다.
-  Widget _weightRuler() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, right: 12),
-      child: LayoutBuilder(
-        builder: (context, c) {
-          const min = 0.5, max = 45.0;
-          final x = (10 - min) / (max - min) * c.maxWidth;
-          return SizedBox(
-            height: 26,
-            child: Stack(
-              children: [
-                Positioned(
-                  left: x - 40,
-                  width: 80,
-                  child: Column(
-                    children: [
-                      Container(width: 1, height: 6, color: T.inkSoft),
-                      const SizedBox(height: 3),
-                      const Text(
-                        '10kg',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamilyFallback: T.monoStack,
-                          fontSize: 10.5,
-                          color: T.inkSoft,
-                        ),
-                      ),
-                      const Text(
-                        '제한이 몰리는 기준',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamilyFallback: T.kr,
-                          fontSize: 9.5,
-                          color: T.mute,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _label(String s) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      s,
-      style: const TextStyle(
-        fontFamilyFallback: T.kr,
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: T.inkSoft,
-        letterSpacing: 0.3,
-      ),
+  InputDecoration _inputDecoration(String hint) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(
+      fontFamilyFallback: T.kr,
+      color: T.mute,
+      fontSize: 14,
+    ),
+    filled: true,
+    fillColor: T.paper,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.line),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.line),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(T.r),
+      borderSide: const BorderSide(color: T.brand, width: 1.5),
     ),
   );
 
-  Widget _check({
-    required bool value,
-    required ValueChanged<bool> onChanged,
+  Widget _label(String s) => Text(
+    s,
+    style: const TextStyle(
+      fontFamilyFallback: T.kr,
+      fontSize: 13,
+      fontWeight: FontWeight.w800,
+      color: T.ink,
+    ),
+  );
+
+  Widget _toggle({
+    required IconData icon,
     required String title,
     required String note,
+    required bool value,
+    required ValueChanged<bool> onChanged,
   }) {
     return InkWell(
       onTap: () => onChanged(!value),
       borderRadius: BorderRadius.circular(T.r),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 13),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Checkbox(
-              value: value,
-              onChanged: (v) => onChanged(v ?? false),
-              activeColor: T.ink,
-              visualDensity: VisualDensity.compact,
+            Container(
+              width: 35,
+              height: 35,
+              decoration: BoxDecoration(
+                color: value ? T.brandSoft : T.brandMist,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: value ? T.brandDeep : T.inkSoft,
+              ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 9),
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamilyFallback: T.kr,
-                        fontSize: 14.5,
-                        color: T.ink,
-                      ),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: T.ink,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
                     note,
                     style: const TextStyle(
                       fontFamilyFallback: T.kr,
-                      fontSize: 12,
-                      color: T.inkSoft,
-                      height: 1.4,
+                      fontSize: 11.5,
+                      color: T.mute,
                     ),
                   ),
                 ],
               ),
             ),
+            Switch(
+              value: value,
+              activeThumbColor: T.brand,
+              activeTrackColor: T.brandSoft,
+              onChanged: onChanged,
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TitleBar extends StatelessWidget {
+  const _TitleBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        Text(
+          '반려견 프로필',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamilyFallback: T.kr,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: T.ink,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          '우리 아이에게 맞는 동반 조건을 확인해요',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamilyFallback: T.kr,
+            fontSize: 11.5,
+            color: T.mute,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PetAvatar extends StatelessWidget {
+  const _PetAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 144,
+        height: 144,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: T.brandSoft,
+          shape: BoxShape.circle,
+          border: Border.all(color: T.card, width: 4),
+          boxShadow: T.softShadow,
+        ),
+        child: const PetPassMascot(size: 108, kind: PetPassMascotKind.profile),
       ),
     );
   }

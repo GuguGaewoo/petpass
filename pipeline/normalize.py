@@ -12,13 +12,16 @@
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from rules import patterns as P
-from tourapi import NORMALIZED_FILE, cid_of, merged_records, save_json
+from tourapi import (
+    DATA_DIR, NORMALIZED_FILE, cid_of, load_json, merged_records, save_json,
+)
 
 # v3: 맹견 조건부 입마개(muzzle_if_fierce) 추가, 배변봉투 회수
 SCHEMA_VERSION = 3
@@ -35,6 +38,17 @@ CONTENT_TYPE = {
 }
 
 
+def _homepage(raw):
+    """홈페이지 필드는 <a href="..."> 형태로 오는 경우가 많다. URL 만 뽑는다."""
+    if not raw:
+        return ""
+    m = re.search(r'href=["\']?(https?://[^"\'>\s]+)', str(raw))
+    if m:
+        return m.group(1)
+    m = re.search(r'https?://[^\s<"]+', str(raw))
+    return m.group(0) if m else ""
+
+
 def _iso(yyyymmddhhmmss):
     s = str(yyyymmddhhmmss or "").strip()
     if len(s) < 8:
@@ -45,8 +59,19 @@ def _iso(yyyymmddhhmmss):
         return None
 
 
+# 국문 관광정보 상세.
+# 반려동물 동반여행 서비스는 동반 조건만 주고 개요나 홈페이지를 주지 않는다.
+# 같은 contentId 로 조회한 결과를 병합해 상세 화면을 채운다.
+#
+# 실측 채움률: 개요 94%, 홈페이지 76%, 대표이미지 73%, 전화번호 0%
+# 전화번호는 한 건도 없어 화면에서 제외했다.
+_KOR = load_json(os.path.join(DATA_DIR, "kor_detail.json"), {})
+
+
 def normalize(rec):
     """병합된 원본 레코드 1건 → 구조화 스키마 1건"""
+    _kor = _KOR.get(cid_of(rec)) or {}
+
     acmpy_raw = (rec.get("acmpyTypeCd") or "").strip()
     cpam = (rec.get("acmpyPsblCpam") or "").strip()
     need = (rec.get("acmpyNeedMtr") or "").strip()
@@ -160,7 +185,11 @@ def normalize(rec):
         "lat": float(rec["mapy"]) if rec.get("mapy") else None,
         "lng": float(rec["mapx"]) if rec.get("mapx") else None,
         "tel": rec.get("tel") or "",
-        "image": rec.get("firstimage") or "",
+        "image": rec.get("firstimage") or _kor.get("firstimage") or "",
+
+        # 국문 관광정보 보강
+        "overview": (_kor.get("overview") or "").strip(),
+        "homepage": _homepage(_kor.get("homepage")),
 
         # 구조화된 제약 조건
         "has_detail": has_detail,
