@@ -1,0 +1,42 @@
+name: TourAPI data sync
+
+# 목적: 매일 KTO(한국관광공사) Open API 최신 상태를 Supabase places 에 반영.
+#
+# 필요 Secrets (Settings → Secrets and variables → Actions):
+#   TOUR_API_KEY
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_KEY   ← service_role 키. anon 키 아님.
+
+on:
+  schedule:
+    # 매일 04:00 KST = 전날 19:00 UTC
+    - cron: '0 19 * * *'
+
+  # 수동 실행용. Actions 탭에서 바로 트리거해 확인할 수 있다.
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 의존성 설치
+        run: pip install -r pipeline/requirements.txt
+
+      - name: KTO 데이터 동기화
+        env:
+          TOUR_API_KEY: ${{ secrets.TOUR_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cd pipeline
+          python sync_service.py
