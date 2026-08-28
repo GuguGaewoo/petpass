@@ -68,9 +68,18 @@ def _iso(yyyymmddhhmmss):
 _KOR = load_json(os.path.join(DATA_DIR, "kor_detail.json"), {})
 
 
-def normalize(rec):
-    """병합된 원본 레코드 1건 → 구조화 스키마 1건"""
-    _kor = _KOR.get(cid_of(rec)) or {}
+def normalize(rec, kor_detail=None):
+    """병합된 원본 레코드 1건 → 구조화 스키마 1건
+
+    kor_detail:
+        국문 관광정보 상세(overview/homepage/firstimage 등) 딕셔너리를
+        직접 넘길 때 사용한다. 배치 수집(sync.py, sync_service.py)은
+        미리 모아둔 kor_detail.json(_KOR)을 그대로 쓰면 되므로 생략해도
+        되지만, 실시간 상세조회(backend/main.py)는 그 요청 안에서 막
+        받아온 국문 상세를 곧바로 넘긴다. None 이면 기존과 동일하게
+        _KOR 에서 찾는다 — 즉 기존 호출부는 아무것도 바꿀 필요가 없다.
+    """
+    _kor = kor_detail if kor_detail is not None else (_KOR.get(cid_of(rec)) or {})
 
     acmpy_raw = (rec.get("acmpyTypeCd") or "").strip()
     cpam = (rec.get("acmpyPsblCpam") or "").strip()
