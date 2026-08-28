@@ -285,7 +285,7 @@ class PlaceDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             const Text(
-                              '출처 한국관광공사 TourAPI · 방문 전 현장 확인을 권장합니다',
+                              '출처 공공 관광데이터 · 방문 전 현장 확인을 권장합니다',
                               style: TextStyle(
                                 fontFamilyFallback: T.kr,
                                 fontSize: 11,
