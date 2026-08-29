@@ -124,6 +124,10 @@ create policy places_read on public.places
 grant usage on schema public to anon, authenticated;
 grant select on public.places to anon, authenticated;
 
+-- ⚠ service_role 권한은 여기에 없다. db/003_grant_service_role.sql 에서
+--   별도로 부여한다. 이 프로젝트는 기본 권한이 service_role 에 자동
+--   부여되지 않아, 003 을 적용하지 않으면 배치·백엔드가 42501 로 실패한다.
+
 -- ────────────────────────────────────────────────
 -- 5) KTO Open API 호출 로그
 --    심사/운영 모니터링 용도. 사용자에게 공개하지 않는다.
