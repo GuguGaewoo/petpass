@@ -10,7 +10,7 @@ import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
 import '../../domain/models/verdict.dart';
-import '../detail/place_detail_screen.dart';
+import '../detail/open_place_detail.dart';
 import '../saved/saved_screen.dart';
 import '../widgets/petpass_decor.dart';
 import '../widgets/verdict_badge.dart';
@@ -106,13 +106,10 @@ class _SearchScreenState extends State<SearchScreen> {
                               saved: s.isSaved(e.place.contentId),
                               onSavedToggle: () =>
                                   s.toggleSaved(e.place.contentId),
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => PlaceDetailScreen(
-                                    state: s,
-                                    place: e.place,
-                                  ),
-                                ),
+                              onTap: () => openPlaceDetail(
+                                Navigator.of(context),
+                                state: s,
+                                place: e.place,
                               ),
                             );
                           },

@@ -21,4 +21,5 @@ fi
 exec flutter run -d chrome --web-port=8080 \
   --dart-define=NAVER_MAP_CLIENT_ID="${NAVER_MAP_CLIENT_ID}" \
   --dart-define=SUPABASE_URL="${SUPABASE_URL}" \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY}"
+  --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY}" \
+  --dart-define=PETPASS_API_BASE_URL="${PETPASS_API_BASE_URL}"

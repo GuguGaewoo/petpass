@@ -10,7 +10,7 @@ import '../../app_state.dart';
 import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/neighbor.dart';
-import '../detail/place_detail_screen.dart';
+import '../detail/open_place_detail.dart';
 import 'petpass_decor.dart';
 
 Future<void> showNeighborSheet(
@@ -215,13 +215,11 @@ class _Sheet extends StatelessWidget {
                 label: '동반 조건 자세히 보기',
                 height: 54,
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PlaceDetailScreen(state: state, place: place),
-                    ),
-                  );
+                  // 시트를 닫으면 이 context 의 Navigator 를 더는 쓸 수
+                  // 없다. pop 하기 전에 미리 잡아 둔다.
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  openPlaceDetail(navigator, state: state, place: place);
                 },
               )
             else

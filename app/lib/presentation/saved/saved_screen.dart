@@ -10,7 +10,7 @@ import '../../app_state.dart';
 import '../../core/platform.dart';
 import '../../core/tokens.dart';
 import '../../domain/models/place_constraint.dart';
-import '../detail/place_detail_screen.dart';
+import '../detail/open_place_detail.dart';
 import '../widgets/petpass_decor.dart';
 import '../widgets/verdict_badge.dart';
 
@@ -160,10 +160,10 @@ class _SavedCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(T.rCard),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => PlaceDetailScreen(state: state, place: place),
-            ),
+          onTap: () => openPlaceDetail(
+            Navigator.of(context),
+            state: state,
+            place: place,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
