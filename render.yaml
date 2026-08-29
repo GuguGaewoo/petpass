@@ -1,0 +1,47 @@
+# Render Blueprint — PetPass 백엔드 배포 설정
+#
+# 대시보드에서 손으로 설정해도 되지만, 여기에 적어두면 재배포나
+# 재생성 때 같은 구성을 그대로 복원할 수 있다.
+#
+# 사용법
+#   Render 대시보드 → New → Blueprint → 이 저장소 선택
+#   (또는 New → Web Service 로 만들고 아래 값들을 손으로 입력)
+#
+# ⚠ 환경변수 3개는 여기에 값을 적지 않는다.
+#   sync: false 로 두면 Render 가 대시보드에서 직접 입력받는다.
+#   TOUR_API_KEY 와 SUPABASE_SERVICE_KEY 는 저장소에 절대 커밋하지 않는다.
+
+services:
+  - type: web
+    name: petpass-api
+    runtime: python
+    plan: free
+    region: singapore          # 한국에서 가장 가까운 리전
+
+    # backend/ 를 작업 디렉터리로 삼는다.
+    # main.py 가 sys.path 에 ../pipeline 을 넣으므로
+    # normalize.py / tourapi.py 는 그대로 재사용된다.
+    rootDir: backend
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # Render 가 이 경로로 주기적으로 확인해 인스턴스 상태를 판단한다.
+    healthCheckPath: /health
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.10"
+
+      # ── 대시보드에서 직접 입력 (커밋 금지) ──
+      - key: TOUR_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+
+      # Flutter 웹이 호출할 출처. 배포 후 실제 주소로 바꾼다.
+      # 예: https://petpass.vercel.app
+      - key: ALLOWED_ORIGINS
+        sync: false
