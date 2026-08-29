@@ -60,6 +60,19 @@ _origins = [
     if x.strip()
 ]
 
+# 같은 장소를 이 시간 안에 다시 조회하면 KTO API 를 재호출하지 않고
+# 직전 확인 결과(DB 캐시)를 그대로 돌려준다.
+#
+# 개발계정은 일 1,000건 제한이 있다. 심사위원 여러 명이 같은 장소를
+# 오가며 눌러보면 그 한도를 금방 소진할 수 있는데, 몇 분 사이에 관광
+# 데이터가 바뀔 일은 사실상 없으므로 재호출의 실익이 없다.
+#
+# 환경변수 LIVE_TTL_SECONDS 로 조정 가능. 0 이면 항상 재호출한다.
+try:
+    LIVE_TTL_SECONDS = int(os.getenv("LIVE_TTL_SECONDS", "600"))
+except ValueError:
+    LIVE_TTL_SECONDS = 600
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_origins,
@@ -90,6 +103,33 @@ def health():
     return {"ok": True}
 
 
+def _is_fresh(row: dict) -> bool:
+    """직전 실시간 확인이 TTL 안에 있으면 True.
+
+    live_checked_at 이 없으면(배치로만 들어온 장소) 항상 False 를 반환해
+    최초 1회는 반드시 실제 API 를 호출하도록 한다.
+    """
+    if LIVE_TTL_SECONDS <= 0:
+        return False
+
+    raw = row.get("live_checked_at")
+    if not raw:
+        return False
+
+    try:
+        # Supabase 는 '+00:00' 또는 'Z' 로 끝나는 ISO 문자열을 준다.
+        checked = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+
+    # 타임존 정보가 없으면 UTC 로 간주한다.
+    if checked.tzinfo is None:
+        checked = checked.replace(tzinfo=timezone.utc)
+
+    age = (datetime.now(timezone.utc) - checked).total_seconds()
+    return 0 <= age < LIVE_TTL_SECONDS
+
+
 @app.get("/api/places/{content_id}/latest")
 def latest_place(content_id: str):
     """장소 하나의 반려동물 동반 조건을 실제 KTO API로 다시 확인해 반환한다."""
@@ -107,6 +147,11 @@ def latest_place(content_id: str):
         raise HTTPException(status_code=404, detail="place not found")
 
     old = rows[0]
+
+    # TTL 안이면 KTO 를 다시 부르지 않고 직전 확인 결과를 그대로 준다.
+    # 호출량을 아끼기 위한 것이며, 사용자에게 보이는 내용은 동일하다.
+    if _is_fresh(old):
+        return old
 
     try:
         detail, _ = call(PET_BASE, PET_OP_DETAIL, contentId=content_id)
@@ -152,6 +197,14 @@ def latest_place(content_id: str):
 
     fresh["is_active"] = True
     fresh["live_checked_at"] = datetime.now(timezone.utc).isoformat()
+
+    # collected_at 은 '이 장소를 처음 수집한 시각'이다.
+    # normalize() 는 배치 수집을 전제로 매번 현재 시각을 채우므로,
+    # 실시간 조회에서 그대로 두면 클릭할 때마다 최초 수집 시각이
+    # 사라진다. 기존 값이 있으면 보존한다.
+    # (마지막으로 실제 확인한 시각은 live_checked_at 이 담당한다.)
+    if old.get("collected_at"):
+        fresh["collected_at"] = old["collected_at"]
 
     # 이번에 확인한 최신값을 캐시(Supabase)에도 반영해 둔다.
     # 다음 사용자가 같은 장소를 열 때 목록 화면에도 최신값이 보이게 하기 위함.
