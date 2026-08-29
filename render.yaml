@@ -33,6 +33,12 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.10"
 
+      # 같은 장소를 이 시간(초) 안에 다시 조회하면 KTO 를 재호출하지 않고
+      # 직전 확인 결과를 돌려준다. 개발계정 일 1,000건 한도를 보호한다.
+      # 0 이면 항상 재호출.
+      - key: LIVE_TTL_SECONDS
+        value: "600"
+
       # ── 대시보드에서 직접 입력 (커밋 금지) ──
       - key: TOUR_API_KEY
         sync: false
