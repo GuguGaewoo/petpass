@@ -1,0 +1,83 @@
+name: Backend keep-alive
+
+# Render 무료 티어는 15분간 요청이 없으면 서비스를 내리고,
+# 다음 요청이 오면 다시 올리는 데 약 1분이 걸린다.
+# 그동안 들어온 요청은 Flutter 의 8초 타임아웃에 걸려 실패하고,
+# 앱은 기존 데이터로 폴백한다(기능은 정상, 실시간 조회만 건너뜀).
+#
+# ── 왜 24시간이 아니라 낮 시간대만인가 ──
+# Render 의 월 750 인스턴스 시간은 서비스별이 아니라 워크스페이스 전체에
+# 부여된다. 24시간 내내 깨워두면 31일 기준 744시간으로 할당량을 거의
+# 다 쓰고, 소진되면 그 달 남은 기간 동안 모든 무료 서비스가 정지된다.
+# 심사가 10월에 있으므로 그때 서비스가 멈추는 위험을 피해야 한다.
+#
+#   09~20시 KST 만 유지  →  약 11h/일 × 31일 = 341h/월  (여유 충분)
+#   24시간 유지          →  약 744h/월              (한도 750h 턱밑)
+#
+# ── 정확도에 대한 주의 ──
+# GitHub Actions 의 schedule 은 실행이 지연되거나 건너뛰어질 수 있다.
+# 따라서 이 워크플로우는 "대체로 깨어 있게" 하는 수단이지 보장은 아니다.
+# 정확한 주기가 필요하면 cron-job.org 등 외부 크론 서비스에 아래 주소를
+# 등록하는 편이 낫다.
+#
+#     https://<render-주소>/health
+#
+# 심사·시연 직전에는 Actions 탭에서 Run workflow 로 직접 한 번 깨우는 것을
+# 권한다. 지연 가능성을 없애는 가장 확실한 방법이다.
+
+on:
+  schedule:
+    # UTC 00:00~10:59 = KST 09:00~19:59, 10분 간격.
+    # 정각(:00)은 GitHub 전체 부하가 몰려 지연이 잦으므로 3분씩 밀어둔다.
+    - cron: '3,13,23,33,43,53 0-10 * * *'
+
+  # 시연 직전 수동으로 깨울 때 사용
+  workflow_dispatch:
+
+# 이전 실행이 남아 있으면 취소한다. 핑은 최신 1건만 의미가 있다.
+concurrency:
+  group: backend-keepalive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping backend /health
+        env:
+          BASE_URL: ${{ secrets.PETPASS_API_BASE_URL }}
+        run: |
+          # 아직 백엔드를 배포하지 않았다면 조용히 종료한다.
+          # (시크릿 미설정 상태에서 매번 실패 알림이 오는 것을 막는다)
+          if [ -z "${BASE_URL}" ]; then
+            echo "PETPASS_API_BASE_URL 시크릿이 없습니다. 건너뜁니다."
+            exit 0
+          fi
+
+          # 끝의 슬래시를 제거해 '//health' 가 되지 않게 한다.
+          url="${BASE_URL%/}/health"
+          echo "대상: ${url}"
+
+          # 스핀업에 약 1분이 걸리므로 넉넉히 기다린다.
+          # 잠들어 있었다면 이 요청이 바로 깨우는 요청이 된다.
+          for attempt in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 90 "${url}" || echo "000")
+
+            echo "시도 ${attempt}: HTTP ${code}"
+
+            if [ "${code}" = "200" ]; then
+              echo "백엔드 정상."
+              exit 0
+            fi
+
+            [ "${attempt}" -lt 3 ] && sleep 20
+          done
+
+          # 여기까지 오면 3번 모두 실패.
+          # 앱은 폴백으로 계속 동작하므로 치명적이지는 않지만,
+          # 배포 상태를 점검해야 한다는 신호다.
+          echo "::warning::백엔드가 응답하지 않습니다. Render 배포 상태를 확인하세요."
+          exit 1
