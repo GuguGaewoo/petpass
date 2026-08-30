@@ -143,9 +143,15 @@ flutter test
 
 | 항목 | 위치 |
 |---|---|
+| 웹 배포 (Vercel) | `vercel.json`, `scripts/vercel_build.sh` — 절차는 `docs/배포.md` |
+| 백엔드 배포 (Render) | `render.yaml` |
 | 일일 데이터 동기화 | `.github/workflows/tourapi-sync.yml` (04:00 KST) |
 | 백엔드 keep-alive | `.github/workflows/backend-keepalive.yml` (09~20시 KST) |
 | Supabase keep-alive | `.github/workflows/keepalive.yml` (주 1회) |
+
+예약 실행 워크플로우는 **기본 브랜치에 있어야 동작한다.** GitHub Actions 의
+schedule 트리거는 기본 브랜치의 파일만 실행하므로, 기능 브랜치에만 두면
+아무 일도 일어나지 않는다.
 
 Actions Secrets: `TOUR_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`,
 `SUPABASE_KEY`, `PETPASS_API_BASE_URL`
