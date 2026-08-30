@@ -1,4 +1,8 @@
 /// 판정 상세 — 이 앱의 결론이 나오는 화면.
+///
+/// 장소를 직접 받지 않고 contentId 로 AppState 에서 찾아 쓴다.
+/// 화면을 연 뒤 배경에서 실시간 확인이 끝나면 그 결과가 여기에
+/// 자동으로 반영되게 하기 위함이다.
 library;
 
 import 'package:flutter/material.dart';
@@ -19,11 +23,18 @@ class PlaceDetailScreen extends StatelessWidget {
   const PlaceDetailScreen({
     super.key,
     required this.state,
-    required this.place,
+    required this.contentId,
+    required this.fallback,
   });
 
   final AppState state;
-  final PlaceConstraint place;
+
+  /// 표시할 장소의 식별자. 실제 값은 AppState 에서 찾는다.
+  final String contentId;
+
+  /// 목록에 없을 때 쓸 값.
+  /// 실시간 조회로 받은 장소가 아직 목록에 반영되기 전일 수 있다.
+  final PlaceConstraint fallback;
 
   static const _fieldNames = {
     'acmpyTypeCd': '동반 유형',
@@ -46,6 +57,19 @@ class PlaceDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // AppState 가 바뀔 때마다 다시 그린다.
+    // 배경에서 진행되는 실시간 확인 결과가 여기에 반영된다.
+    return ListenableBuilder(
+      listenable: state,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    // 목록에 최신값이 있으면 그것을, 없으면 넘겨받은 값을 쓴다.
+    final place = state.placeOf(contentId) ?? fallback;
+    final refreshing = state.isRefreshing(contentId);
+
     final v = state.judge(place);
     final pet = state.pet;
     final c = verdictColors(v.level);
@@ -58,7 +82,7 @@ class PlaceDetailScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.only(bottom: 40),
             children: [
-              _Header(state: state, place: place),
+              _Header(state: state, place: place, refreshing: refreshing),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
                 child: Container(
@@ -285,7 +309,7 @@ class PlaceDetailScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             const Text(
-                              '출처 한국관광공사 TourAPI · 방문 전 현장 확인을 권장합니다',
+                              '출처 공공 관광데이터 · 방문 전 현장 확인을 권장합니다',
                               style: TextStyle(
                                 fontFamilyFallback: T.kr,
                                 fontSize: 11,
@@ -537,10 +561,17 @@ class PlaceDetailScreen extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.state, required this.place});
+  const _Header({
+    required this.state,
+    required this.place,
+    required this.refreshing,
+  });
 
   final AppState state;
   final PlaceConstraint place;
+
+  /// 배경에서 최신 조건을 확인하는 중인가.
+  final bool refreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -580,6 +611,11 @@ class _Header extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
+                    // 이미지가 없으면 올려둘 자리가 없으므로 제목 아래에 둔다.
+                    if (refreshing) ...[
+                      const SizedBox(height: 12),
+                      const _RefreshingChip(onImage: false),
+                    ],
                   ],
                 ),
               ),
@@ -622,6 +658,9 @@ class _Header extends StatelessWidget {
               child: _bar(context, onImage: true),
             ),
           ),
+          // 배경에서 최신 조건을 확인하는 동안만 보인다.
+          // 이미지 위 어두운 그라데이션과 겹치므로 흰 글씨로 둔다.
+          if (refreshing) const Center(child: _RefreshingChip()),
           Positioned(
             left: 20,
             right: 20,
@@ -894,6 +933,58 @@ class _ReportLineState extends State<_ReportLine> {
           ),
         );
       },
+    );
+  }
+}
+
+/// 배경에서 최신 조건을 확인하는 동안 보여주는 표시.
+///
+/// 화면은 이미 열려 있고 기존 데이터로 정상 동작하는 상태다. 이 표시는
+/// "잠깐 기다리라"가 아니라 "더 최신인지 확인하고 있다"는 안내다.
+/// 그래서 화면을 가리거나 조작을 막지 않는다.
+class _RefreshingChip extends StatelessWidget {
+  const _RefreshingChip({this.onImage = true});
+
+  /// 이미지 위에 얹는가. 배경에 따라 색을 달리해야 읽힌다.
+  final bool onImage;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = onImage ? Colors.white : T.inkSoft;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        // 이미지 위에서는 반투명 검정, 흰 배경에서는 연한 브랜드색.
+        color: onImage ? const Color(0x99332D3D) : T.brandMist,
+        borderRadius: BorderRadius.circular(T.rPill),
+        border: onImage ? null : Border.all(color: T.brandSoft),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 13,
+              height: 13,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(fg),
+              ),
+            ),
+            const SizedBox(width: 9),
+            Text(
+              '최신 정보 확인 중',
+              style: TextStyle(
+                fontFamilyFallback: T.kr,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

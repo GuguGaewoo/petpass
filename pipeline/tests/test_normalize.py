@@ -164,6 +164,38 @@ def test_source_text_preserved():
     assert r["last_modified"].startswith("2024-12-18")
 
 
+# ── 실시간 조회 경로: kor_detail 인자 (backend/main.py 가 사용) ──
+def test_kor_detail_default_uses_local_file():
+    # 인자를 안 넘기면 기존과 동일하게 kor_detail.json(_KOR)에서 찾는다.
+    # 테스트 데이터에는 없는 contentId 이므로 빈 값이어야 한다.
+    r = normalize(_rec(contentid="존재하지-않는-id"))
+    assert r["overview"] == ""
+    assert r["homepage"] == ""
+
+
+def test_kor_detail_override_takes_priority():
+    # 실시간 상세조회는 방금 받아온 국문 상세를 즉시 넘긴다.
+    # _KOR(로컬 파일) 값이 있더라도 kor_detail 인자가 우선해야 한다.
+    r = normalize(
+        _rec(contentid="1"),
+        kor_detail={
+            "overview": "실시간으로 받은 개요",
+            "homepage": '<a href="https://example.com">홈페이지</a>',
+            "firstimage": "https://example.com/live.jpg",
+        },
+    )
+    assert r["overview"] == "실시간으로 받은 개요"
+    assert r["homepage"] == "https://example.com"
+    assert r["image"] == "https://example.com/live.jpg"
+
+
+def test_kor_detail_none_falls_back_to_local_file():
+    # kor_detail=None 은 "값을 못 받았다"는 뜻이 아니라
+    # "이 호출부는 로컬 파일 기준으로 처리해 달라"는 기존 동작이다.
+    r = normalize(_rec(contentid="1"), kor_detail=None)
+    assert r["overview"] == ""
+
+
 if __name__ == "__main__":
     fails = 0
     for name, fn in sorted(globals().items()):

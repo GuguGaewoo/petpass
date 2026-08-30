@@ -1,11 +1,11 @@
 {
-    "name": "petpass",
-    "short_name": "petpass",
+    "name": "PetPass",
+    "short_name": "PetPass",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFF9F1",
+    "theme_color": "#8B72C8",
+    "description": "반려견과 함께 갈 수 있는 곳인지, 조건까지 확인하세요.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

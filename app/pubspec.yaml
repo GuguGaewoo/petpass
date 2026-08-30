@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_naver_map: ^1.4.4
+  # 실시간 상세조회 백엔드 호출용.
+  # supabase_flutter 가 이미 끌어오던 것을 직접 의존성으로 올렸다.
+  # lock 에 잡힌 1.6.0 을 그대로 쓰므로 다른 패키지 버전은 바뀌지 않는다.
+  http: ^1.6.0
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.17.1
   url_launcher: ^6.3.2
