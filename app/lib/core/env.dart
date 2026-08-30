@@ -26,4 +26,17 @@ class Env {
   /// 키가 없으면 제보 버튼을 노출하지 않는다. 핵심 기능은 영향받지 않는다.
   static bool get hasReportBackend =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
+
+  /// 실시간 상세조회 백엔드 주소.
+  ///
+  /// 장소 상세에 들어갈 때 이 서버가 관광 Open API 를 다시 호출해
+  /// 최신 동반 조건을 확인한다. 인증키는 서버에만 있고 앱에는 없다.
+  ///
+  /// 비어 있으면 실시간 조회를 건너뛰고 이미 읽어 둔 데이터를 그대로
+  /// 쓴다. 즉 이 값이 없어도 화면과 기능은 완전히 동일하게 동작한다.
+  static const petpassApiBaseUrl = String.fromEnvironment(
+    'PETPASS_API_BASE_URL',
+  );
+
+  static bool get hasLiveApi => petpassApiBaseUrl.isNotEmpty;
 }

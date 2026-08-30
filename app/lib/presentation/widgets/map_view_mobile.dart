@@ -94,6 +94,39 @@ class _MobileMapState extends State<_MobileMap> {
   Color _color(String hex) =>
       Color(int.parse(hex.replaceFirst('#', 'ff'), radix: 16));
 
+  /// 판정 등급 색을 그대로 보여주는 마커 아이콘을 만든다.
+  ///
+  /// iconTintColor 를 쓰지 않는 이유:
+  ///   그 속성은 기본 아이콘 위에 색을 '가산혼합' 한다. 기본 아이콘이
+  ///   이미 색을 가지고 있어서, 어떤 색을 넣어도 밝은 쪽으로 몰려
+  ///   가능·조건부·불가가 전부 비슷한 색으로 보였다.
+  ///   아이콘 자체를 그려서 넘기면 지정한 색이 그대로 나온다.
+  Future<NOverlayImage> _pinIcon(
+    BuildContext context, {
+    required Color color,
+    required bool isOrigin,
+  }) {
+    final size = isOrigin ? 34.0 : 22.0;
+
+    return NOverlayImage.fromWidget(
+      context: context,
+      // 흰 테두리를 둘러 지도 배경과 겹쳐도 색이 또렷하게 보이도록 한다.
+      widget: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white,
+            width: isOrigin ? 3.5 : 2.5,
+          ),
+        ),
+      ),
+      size: Size(size, size),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<void>(
@@ -121,13 +154,21 @@ class _MobileMapState extends State<_MobileMap> {
           ),
           onMapReady: (controller) async {
             for (final p in widget.pins) {
+              // 아이콘 생성이 비동기라 위젯이 사라졌는지 매번 확인한다.
+              if (!context.mounted) return;
+
+              final icon = await _pinIcon(
+                context,
+                color: _color(p.color),
+                isOrigin: p.isOrigin,
+              );
+
               final marker = NMarker(
                 id: p.id,
                 position: NLatLng(p.lat, p.lng),
-                // 기준 장소를 크게. 색은 판정 등급을 나타내므로
-                // 크기로 구분한다.
-                iconTintColor: _color(p.color),
-                size: p.isOrigin ? const Size(32, 42) : const Size(20, 26),
+                // 색은 판정 등급, 크기는 기준 장소 여부를 나타낸다.
+                icon: icon,
+                size: p.isOrigin ? const Size(34, 34) : const Size(22, 22),
               );
               if (widget.onPinTap != null && !p.isOrigin) {
                 marker.setOnTapListener((_) => widget.onPinTap!(p.id));
