@@ -194,7 +194,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
               SizedBox(width: 5),
               Expanded(
                 child: Text(
-                  '큰 물방울이 현재 보고 있는 장소입니다 · 색은 판정 등급',
+                  '큰 원이 현재 보고 있는 장소입니다 · 색은 판정 등급',
                   style: TextStyle(
                     fontFamilyFallback: T.kr,
                     fontSize: 11,
