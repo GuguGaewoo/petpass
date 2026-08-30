@@ -72,33 +72,53 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 지금 실시간 확인 중인 장소들의 contentId.
+  ///
+  /// 상세화면이 "최신 정보 확인 중" 표시를 띄울지 판단하는 데 쓴다.
+  /// 여러 장소를 빠르게 오갈 수 있으므로 단일 플래그가 아닌 집합이다.
+  final Set<String> _refreshing = {};
+
+  bool isRefreshing(String contentId) => _refreshing.contains(contentId);
+
   /// 장소 하나를 관광 Open API 로 다시 확인하고 그 결과를 반영한다.
   ///
-  /// 상세화면에 들어가기 직전에 호출한다. 받아온 값은 목록에도 반영해
-  /// 같은 세션 안에서는 저장 목록·주변 추천도 최신 조건으로 판정된다.
+  /// 상세화면을 연 뒤 배경에서 호출한다. 화면 진입을 막지 않으므로
+  /// 서버가 잠들어 있어도 사용자는 기다리지 않는다.
+  ///
+  /// 받아온 값은 목록에도 반영해 같은 세션 안에서는 저장 목록·주변
+  /// 추천도 최신 조건으로 판정된다.
   ///
   /// 실패하면 넘겨받은 값을 그대로 돌려주므로 호출하는 쪽에서 예외를
   /// 처리할 필요가 없다.
   Future<PlaceConstraint> refreshPlace(PlaceConstraint current) async {
-    final fresh = await _repo.loadLatest(current);
+    // 이미 확인 중이면 중복 호출하지 않는다.
+    if (_refreshing.contains(current.contentId)) return current;
 
-    // 내용이 같으면 목록을 건드리지 않는다.
-    // 불필요한 notifyListeners() 로 화면을 다시 그리지 않기 위함이다.
-    if (identical(fresh, current)) return current;
+    _refreshing.add(current.contentId);
+    notifyListeners();
 
-    final i = _places.indexWhere((p) => p.contentId == fresh.contentId);
-    if (i >= 0) {
-      final next = List<PlaceConstraint>.from(_places);
-      next[i] = fresh;
-      _places = next;
+    try {
+      final fresh = await _repo.loadLatest(current);
 
-      // 목록이 바뀌었으므로 contentId 인덱스를 다시 만들게 한다.
-      _byId = null;
+      // 내용이 같으면 목록을 건드리지 않는다.
+      if (identical(fresh, current)) return current;
 
+      final i = _places.indexWhere((p) => p.contentId == fresh.contentId);
+      if (i >= 0) {
+        final next = List<PlaceConstraint>.from(_places);
+        next[i] = fresh;
+        _places = next;
+
+        // 목록이 바뀌었으므로 contentId 인덱스를 다시 만들게 한다.
+        _byId = null;
+      }
+
+      return fresh;
+    } finally {
+      // 성공하든 실패하든 표시는 반드시 걷는다.
+      _refreshing.remove(current.contentId);
       notifyListeners();
     }
-
-    return fresh;
   }
 
   void setPet(PetProfile p) {
