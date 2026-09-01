@@ -1,7 +1,7 @@
 name: petpass
 description: "반려동물 동반여행 사전확인 플랫폼"
-publish_to: 'none'
-version: 0.1.0
+publish_to: "none"
+version: 0.1.0+1
 
 environment:
   sdk: ^3.12.0
