@@ -150,11 +150,24 @@ def test_no_detail():
 
 
 def test_partial_area_flag():
-    """일부구역 + 기타정보 존재 = 원문 확인 유도 (실측 최다 케이스)"""
+    """일부구역인데 유형도 특정 못 하면 원문 확인 유도 (실측 최다 케이스)
+
+    유형이 특정되면 플래그를 끄고 그 유형을 직접 안내한다.
+    "원문을 확인하세요" 보다 "숙박시설은 불가" 가 나은 안내이기 때문이다.
+    """
+    # 유형 특정 가능 → 플래그 대신 banned_zones 로 안내
     r = normalize(_rec(acmpyTypeCd="일부구역 동반가능",
                        acmpyPsblCpam="전 견종 동반 가능",
                        etcAcmpyInfo="카라반 동반 불가(오토캠핑장만 가능)"))
-    assert r["zone_detail_in_text"] is True
+    assert r["banned_zones"] == ["숙박"]
+    assert r["zone_detail_in_text"] is False
+
+    # 고유명사 구역이라 유형을 알 수 없음 → 원문 확인 유도 유지
+    r2 = normalize(_rec(acmpyTypeCd="일부구역 동반가능",
+                        acmpyPsblCpam="전 견종 동반 가능",
+                        etcAcmpyInfo="청운답원은 동반 불가"))
+    assert r2["banned_zones"] == []
+    assert r2["zone_detail_in_text"] is True
 
 
 # ── 근거 보존 ──
@@ -209,3 +222,68 @@ if __name__ == "__main__":
     print(f"\n{'전부 통과' if not fails else str(fails) + '건 실패'}"
           f" ({sum(1 for k in globals() if k.startswith('test_'))}건)")
     sys.exit(1 if fails else 0)
+
+
+# ══════════════════════════════════════════════════
+# 동반 불가 구역 분류
+# 모든 케이스는 실측 75개 문장에서 가져왔다.
+# ══════════════════════════════════════════════════
+import rules.patterns as _P
+
+
+def test_zone_basic_indoor():
+    assert _P.extract_banned_zones("- 실내는 동반 불가") == ["실내"]
+    assert _P.extract_banned_zones("- 내부 시설 동반 불가") == ["실내"]
+    assert _P.extract_banned_zones("- 가옥 안쪽은 동반 불가") == ["실내"]
+
+
+def test_zone_multiple_kinds():
+    # "철도박물관 및 카페는 동반 불가" — 나열을 각각 분류한다
+    assert set(_P.extract_banned_zones("- 철도박물관 및 카페는 동반 불가")) == {
+        "전시", "식음료"
+    }
+    assert set(_P.extract_banned_zones("- 마트와 식당은 출입 불가")) == {"식음료"}
+    assert set(_P.extract_banned_zones("- 식당, 카페, 일부매장 동반 불가")) == {"식음료"}
+
+
+def test_zone_ignores_subject_not_place():
+    # 견종·동반자 제한은 구역이 아니다. fierce_excluded 등이 따로 처리한다.
+    assert _P.extract_banned_zones("- 맹견 동반 불가") == []
+    assert _P.extract_banned_zones("- 5대맹견 및 하이브리드 반려견 동반 불가") == []
+    assert _P.extract_banned_zones("- 미리 논의 되지 않은 반려견 동반 불가") == []
+
+
+def test_zone_ignores_condition_not_place():
+    # 조건문을 구역으로 뽑으면 엉뚱한 안내가 된다.
+    assert _P.extract_banned_zones("- 필수예방접종 미완료 시 동반 불가") == []
+    assert _P.extract_banned_zones("- 반려동물의 몸이 외부에 노출되면 동반 불가") == []
+    assert _P.extract_banned_zones("- 우천 시에는 동반 불가") == []
+
+
+def test_zone_partial_allow_sentence():
+    # 앞부분의 '가능'에 속지 않고 뒤의 금지 대상을 잡아야 한다.
+    assert _P.extract_banned_zones(
+        "- 공터는 동반 가능하나 카페 내부는 동반 불가"
+    ) == ["실내"]
+    assert _P.extract_banned_zones(
+        "- 산림욕장은 전견종 동반 가능하나 캠핑장은 15Kg이상 동반 불가"
+    ) == ["체육"]
+
+
+def test_zone_unknown_is_skipped_not_guessed():
+    # 고유명사 구역은 유형을 알 수 없다. 추측하지 않고 건너뛴다.
+    # (원문은 화면에 그대로 표시되므로 정보가 사라지지는 않는다)
+    assert _P.extract_banned_zones("- 청운답원은 동반 불가") == []
+    assert _P.extract_banned_zones("- 스페이스 워크 동반 불가") == []
+
+
+def test_zone_no_ban_sentence():
+    assert _P.extract_banned_zones("- 목줄 착용 필수") == []
+    assert _P.extract_banned_zones("") == []
+    assert _P.extract_banned_zones(None) == []
+
+
+def test_zone_dedupes():
+    # 여러 줄에서 같은 유형이 나와도 한 번만
+    text = "- 실내는 동반 불가\n- 내부 시설 동반 불가"
+    assert _P.extract_banned_zones(text) == ["실내"]

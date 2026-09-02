@@ -185,13 +185,20 @@ class PlaceDetailScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (v.zoneNote.isNotEmpty)
+                      if (v.zoneNote.isNotEmpty || v.zoneSummary.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                           child: _InfoBox(
                             icon: Icons.map_outlined,
                             title: '이용 구역 안내',
-                            text: v.zoneNote,
+                            // 요약을 먼저 보여주고 원문을 아래 붙인다.
+                            // 요약은 유형만 말하므로, 구체적인 구역명은
+                            // 원문에서 확인해야 한다.
+                            text: [
+                              if (v.zoneSummary.isNotEmpty) v.zoneSummary,
+                              if (v.zoneNote.isNotEmpty) v.zoneNote,
+                            ].join('\n'),
+                            highlightFirstLine: v.zoneSummary.isNotEmpty,
                             background: T.brandMist,
                             iconColor: T.brand,
                           ),
@@ -755,6 +762,7 @@ class _InfoBox extends StatelessWidget {
     required this.text,
     required this.background,
     required this.iconColor,
+    this.highlightFirstLine = false,
   });
 
   final IconData icon;
@@ -762,6 +770,10 @@ class _InfoBox extends StatelessWidget {
   final String text;
   final Color background;
   final Color iconColor;
+
+  /// 첫 줄을 요약으로 보고 진하게 표시한다.
+  /// 아래에 원문이 이어질 때 둘을 구분하기 위함이다.
+  final bool highlightFirstLine;
 
   @override
   Widget build(BuildContext context) {
@@ -792,15 +804,40 @@ class _InfoBox extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontFamilyFallback: T.kr,
-                    fontSize: 13.5,
-                    color: T.inkSoft,
-                    height: 1.6,
+                if (!highlightFirstLine)
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: 13.5,
+                      color: T.inkSoft,
+                      height: 1.6,
+                    ),
+                  )
+                else ...[
+                  Text(
+                    text.split('\n').first,
+                    style: const TextStyle(
+                      fontFamilyFallback: T.kr,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: T.ink,
+                      height: 1.6,
+                    ),
                   ),
-                ),
+                  if (text.contains('\n')) ...[
+                    const SizedBox(height: 7),
+                    Text(
+                      text.split('\n').skip(1).join('\n'),
+                      style: const TextStyle(
+                        fontFamilyFallback: T.kr,
+                        fontSize: 13,
+                        color: T.inkSoft,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),

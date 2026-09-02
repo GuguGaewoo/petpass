@@ -45,6 +45,7 @@ class VerdictEngine {
     final zoneNote = p.acmpyType == AcmpyType.partialArea
         ? _zoneNoteOf(p.etcInfo)
         : '';
+    final zoneSummary = _zoneSummaryOf(p.bannedZones);
 
     Verdict make(VerdictLevel level, String reason, {List<String>? items}) =>
         Verdict(
@@ -58,6 +59,7 @@ class VerdictEngine {
           lastModified: p.lastModified,
           confidence: p.confidence,
           zoneNote: zoneNote,
+          zoneSummary: zoneSummary,
         );
 
     // ── 판단 근거 없음 ──
@@ -150,6 +152,42 @@ class VerdictEngine {
   ///
   /// 무조건 요구(acmpyNeedMtr)와 조건부 요구(etcAcmpyInfo)가 같은 품목일 때
   /// 특히 위험하다. 실제로 두 필드가 모두 입마개를 요구하는 장소가 있다.
+  /// 구역 유형 코드 → 화면 문구.
+  ///
+  /// 정규화 단계에서 붙인 코드는 짧아서 그대로 쓰면 뜻이 모호하다.
+  /// ('식음료' → '식당·카페' 가 무엇을 뜻하는지 분명하다)
+  static const _zoneLabel = {
+    '실내': '실내',
+    '식음료': '식당·카페',
+    '전시': '전시관',
+    '숙박': '숙박시설',
+    '체육': '체육시설',
+    '자연': '일부 야외구역',
+    '탈것': '탑승시설',
+  };
+
+  /// 동반 불가 구역을 한 문장으로 요약한다.
+  ///
+  /// 원문("가옥 안쪽은 동반 불가")은 그대로 함께 보여주므로 여기서는
+  /// 어느 '유형'이 막혔는지만 알려준다. 원문에 없는 내용을 지어내지 않는다.
+  static String _zoneSummaryOf(List<String> kinds) {
+    if (kinds.isEmpty) return '';
+    final labels = kinds.map((k) => _zoneLabel[k] ?? k).toList();
+    // 쉼표로 잇는다. '식당·카페' 처럼 라벨 안에 가운뎃점이 있어서,
+    // 유형 구분에도 가운뎃점을 쓰면 '전시관·식당·카페' 가 세 유형처럼 보인다.
+    final joined = labels.join(', ');
+    return '$joined${_topicParticle(joined)} 동반할 수 없습니다';
+  }
+
+  /// 받침 유무로 '은/는'을 고른다. '은(는)' 은 읽기 나쁘다.
+  static String _topicParticle(String word) {
+    if (word.isEmpty) return '는';
+    final code = word.codeUnitAt(word.length - 1);
+    // 한글 음절 영역 밖이면 안전하게 '는'
+    if (code < 0xAC00 || code > 0xD7A3) return '는';
+    return (code - 0xAC00) % 28 == 0 ? '는' : '은';
+  }
+
   static String _zoneNoteOf(String etc) {
     const drop = ['입마개', '배변봉투', '배변 봉투', '목줄'];
     final lines = etc

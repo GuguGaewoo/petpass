@@ -150,6 +150,54 @@ POOP_BAG_PROVIDED_RE = re.compile(
 
 
 # ══════════════════════════════════════════════════
+# 동반 불가 구역 — 실측 75개 문장
+# ══════════════════════════════════════════════════
+# "동반 가능" 뱃지만 보고 갔다가 실내에서 막히는 것이 이 서비스가 막으려는
+# 헛걸음의 전형이다. 원문에는 어느 구역이 안 되는지 적혀 있지만 지금까지
+# 구조화되지 않아 판정에 쓰이지 못했다.
+#
+# 구역명 자체는 "청운답원", "스페이스 워크"처럼 그 장소에만 있는 고유명사가
+# 많아 일반화가 안 된다. 대신 반복해서 나타나는 구역 '유형'만 분류한다.
+# 실측 75건 중 45건이 유형 분류되고 오분류는 0건이었다.
+
+ZONE_BAN_RE = re.compile(
+    r"(?:동반|출입|입장|이용)\s*(?:불가|금지)|출입불가|동반불가"
+)
+
+# 금지 표현 앞이 구역이 아니라 '조건'인 경우.
+#   "필수예방접종 미완료 시 동반 불가"  → 구역 아님
+#   "반려동물의 몸이 외부에 노출되면"    → 상태 조건
+_ZONE_CONDITION_TAIL = re.compile(r"(?:시|시에|면|므로|경우|때|중|이유로|이외|단독)$")
+
+# 금지 표현 앞이 구역이 아니라 '대상'인 경우.
+#   "맹견 동반 불가", "5대맹견 및 하이브리드 반려견 동반 불가"
+# 이들은 fierce_excluded 등 별도 규칙이 이미 처리한다.
+_ZONE_SUBJECT = re.compile(
+    r"맹견|반려견|반려동물|보호자|하이브리드|소형견|중형견|대형견"
+)
+
+# 나열 구분자. "식당, 카페, 일부매장" / "철도박물관 및 카페" / "마트와 식당"
+_ZONE_SPLIT = re.compile(r"[,，]|\s+및\s+|\s*와\s+|\s*과\s+")
+
+# 구역 유형 사전. 앞에 오는 항목이 우선한다(실내가 가장 포괄적).
+ZONE_KINDS = {
+    "실내": ["실내", "내부", "안쪽", "관내"],
+    "식음료": ["식당", "카페", "식음료", "음식", "매장", "마트", "편의점", "레스토랑"],
+    "전시": ["전시", "박물관", "미술관", "기념관", "체험관", "문화센터", "문화관", "과학관"],
+    "숙박": ["숙소", "객실", "휴양관", "카라반", "방갈로", "선실", "호텔", "펜션"],
+    "체육": ["수영장", "체육", "놀이", "운동장", "캠핑장", "족욕"],
+    "자연": ["잔디", "국립공원", "해수욕장", "산책로", "정원", "농장", "공원"],
+    "탈것": ["전기차량", "유람선", "케이블카", "모노레일", "열차"],
+}
+
+# 조사. "실내는" → "실내"
+_ZONE_PARTICLE = re.compile(r"(?:은|는|이|가|을|를|도)$")
+
+# 이보다 긴 앞부분은 구역명이 아니라 문장 전체가 붙은 것으로 본다.
+_ZONE_HEAD_MAX = 40
+
+
+# ══════════════════════════════════════════════════
 # 추출 함수
 # ══════════════════════════════════════════════════
 def find_any(text, patterns):
@@ -271,3 +319,55 @@ def extract_outdoor_only(text):
     if not text:
         return False
     return find_any(text, OUTDOOR_ONLY) or bool(OUTDOOR_ONLY_RE.search(text))
+
+
+def _zone_kind(zone):
+    """구역명 하나를 유형으로 분류한다. 해당 없으면 None."""
+    for kind, keywords in ZONE_KINDS.items():
+        if any(k in zone for k in keywords):
+            return kind
+    return None
+
+
+def extract_banned_zones(text):
+    """동반 불가 구역의 '유형' 목록을 뽑는다.
+
+    반환 예: ["실내", "식음료"]
+
+    구역명 자체(청운답원 등)는 그 장소에만 있는 고유명사가 많아
+    일반화할 수 없으므로 유형만 남긴다. 유형을 알 수 없는 구역은
+    조용히 건너뛴다. 화면에는 원문이 함께 표시되므로 정보가
+    사라지지는 않는다.
+
+    잘못 뽑는 것이 못 뽑는 것보다 나쁘다. "동반 가능한데 실내는 불가"를
+    잘못 표시하면 사용자가 갈 수 있는 곳을 포기하게 된다.
+    """
+    if not text:
+        return []
+
+    kinds = []
+    for line in text.split("\n"):
+        line = line.strip().lstrip("-").strip()
+        if not line:
+            continue
+
+        m = ZONE_BAN_RE.search(line)
+        if not m:
+            continue
+
+        head = _ZONE_PARTICLE.sub("", line[: m.start()].strip()).strip()
+
+        # 구역명이 아닌 경우를 걸러낸다.
+        if not head or len(head) > _ZONE_HEAD_MAX:
+            continue
+        if _ZONE_CONDITION_TAIL.search(head):
+            continue
+        if _ZONE_SUBJECT.search(head):
+            continue
+
+        for zone in _ZONE_SPLIT.split(head):
+            kind = _zone_kind(zone.strip())
+            if kind and kind not in kinds:
+                kinds.append(kind)
+
+    return kinds

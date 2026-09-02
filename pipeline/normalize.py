@@ -166,8 +166,15 @@ def normalize(rec, kor_detail=None):
         provided.append("배변봉투")
 
     # ── 구역 제한 ──
-    # 일부구역인데 어느 구역인지는 자연어로만 있음 → 원문 확인 유도 플래그
-    zone_detail_in_text = acmpy_type == "partial_area" and bool(etc)
+    # 어느 구역이 막혔는지 유형으로 분류한다. 실측 45건이 여기서 잡힌다.
+    # 고유명사 구역(청운답원 등)은 유형을 알 수 없어 비게 되는데,
+    # 그때는 아래 zone_detail_in_text 가 원문 확인을 유도한다.
+    banned_zones = P.extract_banned_zones(etc) or P.extract_banned_zones(cpam)
+
+    # 일부구역인데 어느 구역인지 유형으로도 특정되지 않음 → 원문 확인 유도
+    zone_detail_in_text = (
+        acmpy_type == "partial_area" and bool(etc) and not banned_zones
+    )
 
     # ── 신뢰도 ──
     signals = [
@@ -218,6 +225,7 @@ def normalize(rec, kor_detail=None):
         "required_items": items,
         "free_use": free_use,
         "see_etc_info": see_etc,
+        "banned_zones": banned_zones,
         "zone_detail_in_text": zone_detail_in_text,
         "provided_items": provided,
         "rental_items": P.split_items(rec.get("relaRntlPrdlst")),

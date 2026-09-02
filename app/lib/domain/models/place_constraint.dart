@@ -57,6 +57,7 @@ class PlaceConstraint {
     this.requiredItems = const [],
     this.freeUse = false,
     this.seeEtcInfo = false,
+    this.bannedZones = const [],
     this.providedItems = const [],
     this.rentalItems = const [],
     this.facilities = const [],
@@ -114,6 +115,12 @@ class PlaceConstraint {
   final List<String> requiredItems;
   final bool freeUse;
   final bool seeEtcInfo;
+
+  /// 동반할 수 없는 구역의 '유형'. 예: ['실내', '식음료']
+  ///
+  /// 구역명 자체는 그 장소에만 있는 고유명사가 많아 일반화할 수 없어
+  /// 유형만 담는다. 유형을 알 수 없으면 비고, 그때는 원문을 그대로 보여준다.
+  final List<String> bannedZones;
   final List<String> providedItems;
   final List<String> rentalItems;
   final List<String> facilities;
@@ -169,6 +176,7 @@ class PlaceConstraint {
     requiredItems: _strList(j['required_items']),
     freeUse: j['free_use'] as bool? ?? false,
     seeEtcInfo: j['see_etc_info'] as bool? ?? false,
+    bannedZones: _strList(j['banned_zones']),
     providedItems: _strList(j['provided_items']),
     rentalItems: _strList(j['rental_items']),
     facilities: _strList(j['facilities']),
