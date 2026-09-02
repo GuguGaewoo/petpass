@@ -32,6 +32,7 @@ class Verdict {
     this.lastModified,
     this.confidence = 0,
     this.zoneNote = '',
+    this.zoneSummary = '',
   });
 
   final VerdictLevel level;
@@ -62,6 +63,10 @@ class Verdict {
 
   /// 일부구역인 경우 그 상세가 담긴 자연어 원문.
   final String zoneNote;
+
+  /// 동반 불가 구역 요약 한 줄. 유형을 특정하지 못하면 빈 문자열이고,
+  /// 그때는 zoneNote(원문)만 보여준다.
+  final String zoneSummary;
 
   bool get needsSourceCheck => confidence < 0.5 || zoneNote.isNotEmpty;
 

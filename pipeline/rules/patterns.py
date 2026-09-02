@@ -53,6 +53,31 @@ GUIDE_DOG_ONLY = [
     "장애인 보조견", "보조견",
 ]
 
+# 위 목록은 acmpyPsblCpam(가능동물) 전용이다. 그 필드는 "안내견" 한 단어만
+# 들어 있는 경우가 많아 단순 포함 검사로 충분하다.
+#
+# etcAcmpyInfo(기타정보)는 문장이라 같은 방식을 쓸 수 없다. 안내견이
+# 언급되는 맥락이 정반대로 갈리기 때문이다.
+#
+#   전용   "장애우 안내견만 이용가능"          → 일반견 불가
+#   예외   "안내견 제외 이동장으로만 동반 가능" → 일반견도 가능(이동장 필요)
+#
+# 후자를 전용으로 잡으면 갈 수 있는 곳이 불가로 뒤집힌다. 그래서
+# '~만 가능' 형태일 때만 전용으로 본다.
+GUIDE_DOG_ONLY_IN_ETC_RE = re.compile(
+    r"(?:안내견|보조견)[^.\n]{0,6}?만\s*(?:이용|출입|입장|동반)?\s*가능"
+    r"|(?:안내견|보조견)\s*(?:이외|외)[^.\n]{0,10}?(?:출입|동반|입장)\s*(?:금지|불가)"
+)
+
+# 다만 '전시실 내에는 안내견 이외 동반 금지' 처럼 특정 구역만 한정하는
+# 문장이 있다. 이때 장소 전체를 안내견 전용으로 보면, 야외는 갈 수 있는
+# 곳이 통째로 불가가 된다. 구역을 가리키는 말이 앞에 오면 제외한다.
+# (그 구역 제한은 banned_zones 가 따로 담는다)
+_GUIDE_DOG_ZONE_SCOPED = re.compile(
+    r"(?:실내|내부|안쪽|관내|전시실|전시장|전시관|박물관|식당|카페|매장"
+    r"|객실|숙소|수영장|체육)[^.\n]{0,12}?(?:안내견|보조견)"
+)
+
 # ══════════════════════════════════════════════════
 # 체중
 # ══════════════════════════════════════════════════
@@ -147,6 +172,54 @@ POOP_BAG_RE = re.compile(r"배변\s*(?:봉투|봉지)")
 POOP_BAG_PROVIDED_RE = re.compile(
     r"배변\s*(?:봉투|봉지)[^.\n]{0,30}?(?:무료|지급|제공|비치|구비)"
 )
+
+
+# ══════════════════════════════════════════════════
+# 동반 불가 구역 — 실측 75개 문장
+# ══════════════════════════════════════════════════
+# "동반 가능" 뱃지만 보고 갔다가 실내에서 막히는 것이 이 서비스가 막으려는
+# 헛걸음의 전형이다. 원문에는 어느 구역이 안 되는지 적혀 있지만 지금까지
+# 구조화되지 않아 판정에 쓰이지 못했다.
+#
+# 구역명 자체는 "청운답원", "스페이스 워크"처럼 그 장소에만 있는 고유명사가
+# 많아 일반화가 안 된다. 대신 반복해서 나타나는 구역 '유형'만 분류한다.
+# 실측 75건 중 45건이 유형 분류되고 오분류는 0건이었다.
+
+ZONE_BAN_RE = re.compile(
+    r"(?:동반|출입|입장|이용)\s*(?:불가|금지)|출입불가|동반불가"
+)
+
+# 금지 표현 앞이 구역이 아니라 '조건'인 경우.
+#   "필수예방접종 미완료 시 동반 불가"  → 구역 아님
+#   "반려동물의 몸이 외부에 노출되면"    → 상태 조건
+_ZONE_CONDITION_TAIL = re.compile(r"(?:시|시에|면|므로|경우|때|중|이유로|이외|단독)$")
+
+# 금지 표현 앞이 구역이 아니라 '대상'인 경우.
+#   "맹견 동반 불가", "5대맹견 및 하이브리드 반려견 동반 불가"
+# 이들은 fierce_excluded 등 별도 규칙이 이미 처리한다.
+_ZONE_SUBJECT = re.compile(
+    r"맹견|반려견|반려동물|보호자|하이브리드|소형견|중형견|대형견"
+)
+
+# 나열 구분자. "식당, 카페, 일부매장" / "철도박물관 및 카페" / "마트와 식당"
+_ZONE_SPLIT = re.compile(r"[,，]|\s+및\s+|\s*와\s+|\s*과\s+")
+
+# 구역 유형 사전. 앞에 오는 항목이 우선한다(실내가 가장 포괄적).
+ZONE_KINDS = {
+    "실내": ["실내", "내부", "안쪽", "관내"],
+    "식음료": ["식당", "카페", "식음료", "음식", "매장", "마트", "편의점", "레스토랑"],
+    "전시": ["전시", "박물관", "미술관", "기념관", "체험관", "문화센터", "문화관", "과학관"],
+    "숙박": ["숙소", "객실", "휴양관", "카라반", "방갈로", "선실", "호텔", "펜션"],
+    "체육": ["수영장", "체육", "놀이", "운동장", "캠핑장", "족욕"],
+    "자연": ["잔디", "국립공원", "해수욕장", "산책로", "정원", "농장", "공원"],
+    "탈것": ["전기차량", "유람선", "케이블카", "모노레일", "열차"],
+}
+
+# 조사. "실내는" → "실내"
+_ZONE_PARTICLE = re.compile(r"(?:은|는|이|가|을|를|도)$")
+
+# 이보다 긴 앞부분은 구역명이 아니라 문장 전체가 붙은 것으로 본다.
+_ZONE_HEAD_MAX = 40
 
 
 # ══════════════════════════════════════════════════
@@ -271,3 +344,76 @@ def extract_outdoor_only(text):
     if not text:
         return False
     return find_any(text, OUTDOOR_ONLY) or bool(OUTDOOR_ONLY_RE.search(text))
+
+
+def _zone_kind(zone):
+    """구역명 하나를 유형으로 분류한다. 해당 없으면 None."""
+    for kind, keywords in ZONE_KINDS.items():
+        if any(k in zone for k in keywords):
+            return kind
+    return None
+
+
+def extract_banned_zones(text):
+    """동반 불가 구역의 '유형' 목록을 뽑는다.
+
+    반환 예: ["실내", "식음료"]
+
+    구역명 자체(청운답원 등)는 그 장소에만 있는 고유명사가 많아
+    일반화할 수 없으므로 유형만 남긴다. 유형을 알 수 없는 구역은
+    조용히 건너뛴다. 화면에는 원문이 함께 표시되므로 정보가
+    사라지지는 않는다.
+
+    잘못 뽑는 것이 못 뽑는 것보다 나쁘다. "동반 가능한데 실내는 불가"를
+    잘못 표시하면 사용자가 갈 수 있는 곳을 포기하게 된다.
+    """
+    if not text:
+        return []
+
+    kinds = []
+    for line in text.split("\n"):
+        line = line.strip().lstrip("-").strip()
+        if not line:
+            continue
+
+        m = ZONE_BAN_RE.search(line)
+        if not m:
+            continue
+
+        head = _ZONE_PARTICLE.sub("", line[: m.start()].strip()).strip()
+
+        # 구역명이 아닌 경우를 걸러낸다.
+        if not head or len(head) > _ZONE_HEAD_MAX:
+            continue
+        if _ZONE_CONDITION_TAIL.search(head):
+            continue
+        if _ZONE_SUBJECT.search(head):
+            continue
+
+        for zone in _ZONE_SPLIT.split(head):
+            kind = _zone_kind(zone.strip())
+            if kind and kind not in kinds:
+                kinds.append(kind)
+
+    return kinds
+
+
+def extract_guide_dog_only(cpam, etc):
+    """안내견(보조견)만 동반 가능한가.
+
+    가능동물 문구는 단어 포함으로, 기타정보는 '~만 가능' 형태일 때만
+    본다. 기타정보에서 단순 포함으로 잡으면 "안내견 제외 이동장으로만
+    동반 가능"(일반견도 가능)이 불가로 뒤집힌다.
+    """
+    if find_any(cpam, GUIDE_DOG_ONLY):
+        return True
+    if not etc:
+        return False
+    for line in etc.split("\n"):
+        if not GUIDE_DOG_ONLY_IN_ETC_RE.search(line):
+            continue
+        # 특정 구역만 한정한 문장이면 장소 전체 전용이 아니다.
+        if _GUIDE_DOG_ZONE_SCOPED.search(line):
+            continue
+        return True
+    return False

@@ -12,13 +12,16 @@
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from rules import patterns as P
-from tourapi import NORMALIZED_FILE, cid_of, merged_records, save_json
+from tourapi import (
+    DATA_DIR, NORMALIZED_FILE, cid_of, load_json, merged_records, save_json,
+)
 
 # v3: 맹견 조건부 입마개(muzzle_if_fierce) 추가, 배변봉투 회수
 SCHEMA_VERSION = 3
@@ -35,6 +38,17 @@ CONTENT_TYPE = {
 }
 
 
+def _homepage(raw):
+    """홈페이지 필드는 <a href="..."> 형태로 오는 경우가 많다. URL 만 뽑는다."""
+    if not raw:
+        return ""
+    m = re.search(r'href=["\']?(https?://[^"\'>\s]+)', str(raw))
+    if m:
+        return m.group(1)
+    m = re.search(r'https?://[^\s<"]+', str(raw))
+    return m.group(0) if m else ""
+
+
 def _iso(yyyymmddhhmmss):
     s = str(yyyymmddhhmmss or "").strip()
     if len(s) < 8:
@@ -45,8 +59,28 @@ def _iso(yyyymmddhhmmss):
         return None
 
 
-def normalize(rec):
-    """병합된 원본 레코드 1건 → 구조화 스키마 1건"""
+# 국문 관광정보 상세.
+# 반려동물 동반여행 서비스는 동반 조건만 주고 개요나 홈페이지를 주지 않는다.
+# 같은 contentId 로 조회한 결과를 병합해 상세 화면을 채운다.
+#
+# 실측 채움률: 개요 94%, 홈페이지 76%, 대표이미지 73%, 전화번호 0%
+# 전화번호는 한 건도 없어 화면에서 제외했다.
+_KOR = load_json(os.path.join(DATA_DIR, "kor_detail.json"), {})
+
+
+def normalize(rec, kor_detail=None):
+    """병합된 원본 레코드 1건 → 구조화 스키마 1건
+
+    kor_detail:
+        국문 관광정보 상세(overview/homepage/firstimage 등) 딕셔너리를
+        직접 넘길 때 사용한다. 배치 수집(sync.py, sync_service.py)은
+        미리 모아둔 kor_detail.json(_KOR)을 그대로 쓰면 되므로 생략해도
+        되지만, 실시간 상세조회(backend/main.py)는 그 요청 안에서 막
+        받아온 국문 상세를 곧바로 넘긴다. None 이면 기존과 동일하게
+        _KOR 에서 찾는다 — 즉 기존 호출부는 아무것도 바꿀 필요가 없다.
+    """
+    _kor = kor_detail if kor_detail is not None else (_KOR.get(cid_of(rec)) or {})
+
     acmpy_raw = (rec.get("acmpyTypeCd") or "").strip()
     cpam = (rec.get("acmpyPsblCpam") or "").strip()
     need = (rec.get("acmpyNeedMtr") or "").strip()
@@ -60,7 +94,9 @@ def normalize(rec):
         acmpy_type = "unknown_value"
 
     # ── 안내견 전용 (판정 2차, 최우선 제약) ──
-    guide_dog_only = P.find_any(cpam, P.GUIDE_DOG_ONLY)
+    # 기타정보에도 '장애우 안내견만 이용가능' 처럼 전용 표현이 온다.
+    # 실측 1건이 여기서 유실돼 '조건부 가능'으로 표시되고 있었다.
+    guide_dog_only = P.extract_guide_dog_only(cpam, etc)
 
     # ── 명시적 불가 / 문의 필요 ──
     explicitly_denied = cpam in P.NOT_ALLOWED
@@ -132,8 +168,15 @@ def normalize(rec):
         provided.append("배변봉투")
 
     # ── 구역 제한 ──
-    # 일부구역인데 어느 구역인지는 자연어로만 있음 → 원문 확인 유도 플래그
-    zone_detail_in_text = acmpy_type == "partial_area" and bool(etc)
+    # 어느 구역이 막혔는지 유형으로 분류한다. 실측 45건이 여기서 잡힌다.
+    # 고유명사 구역(청운답원 등)은 유형을 알 수 없어 비게 되는데,
+    # 그때는 아래 zone_detail_in_text 가 원문 확인을 유도한다.
+    banned_zones = P.extract_banned_zones(etc) or P.extract_banned_zones(cpam)
+
+    # 일부구역인데 어느 구역인지 유형으로도 특정되지 않음 → 원문 확인 유도
+    zone_detail_in_text = (
+        acmpy_type == "partial_area" and bool(etc) and not banned_zones
+    )
 
     # ── 신뢰도 ──
     signals = [
@@ -160,7 +203,11 @@ def normalize(rec):
         "lat": float(rec["mapy"]) if rec.get("mapy") else None,
         "lng": float(rec["mapx"]) if rec.get("mapx") else None,
         "tel": rec.get("tel") or "",
-        "image": rec.get("firstimage") or "",
+        "image": rec.get("firstimage") or _kor.get("firstimage") or "",
+
+        # 국문 관광정보 보강
+        "overview": (_kor.get("overview") or "").strip(),
+        "homepage": _homepage(_kor.get("homepage")),
 
         # 구조화된 제약 조건
         "has_detail": has_detail,
@@ -180,6 +227,7 @@ def normalize(rec):
         "required_items": items,
         "free_use": free_use,
         "see_etc_info": see_etc,
+        "banned_zones": banned_zones,
         "zone_detail_in_text": zone_detail_in_text,
         "provided_items": provided,
         "rental_items": P.split_items(rec.get("relaRntlPrdlst")),

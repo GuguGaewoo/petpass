@@ -42,7 +42,10 @@ class VerdictEngine {
     };
     final baseline = all.where(baselineItems.contains).toList();
     final extra = all.where((i) => !baselineItems.contains(i)).toList();
-    final zoneNote = p.acmpyType == AcmpyType.partialArea ? p.etcInfo : '';
+    final zoneNote = p.acmpyType == AcmpyType.partialArea
+        ? _zoneNoteOf(p.etcInfo)
+        : '';
+    final zoneSummary = _zoneSummaryOf(p.bannedZones);
 
     Verdict make(VerdictLevel level, String reason, {List<String>? items}) =>
         Verdict(
@@ -56,6 +59,7 @@ class VerdictEngine {
           lastModified: p.lastModified,
           confidence: p.confidence,
           zoneNote: zoneNote,
+          zoneSummary: zoneSummary,
         );
 
     // ── 판단 근거 없음 ──
@@ -139,6 +143,61 @@ class VerdictEngine {
     return make(VerdictLevel.possible, '별도 제약이 없습니다');
   }
 
+  /// 구역 안내에서 이미 구조화된 조건 줄을 걷어낸다.
+  ///
+  /// etcAcmpyInfo 에는 "맹견의 경우 입마개 착용 필수" 같은 조건이 섞여 있는데,
+  /// 이건 이미 준비물로 뽑아 화면에 표시하고 있다. 원문을 그대로 두면
+  /// 준비물에는 입마개가 있는데 안내에는 "맹견의 경우"라고 적혀 있어,
+  /// 소형견 보호자가 자기는 해당 없다고 오해할 수 있다.
+  ///
+  /// 무조건 요구(acmpyNeedMtr)와 조건부 요구(etcAcmpyInfo)가 같은 품목일 때
+  /// 특히 위험하다. 실제로 두 필드가 모두 입마개를 요구하는 장소가 있다.
+  /// 구역 유형 코드 → 화면 문구.
+  ///
+  /// 정규화 단계에서 붙인 코드는 짧아서 그대로 쓰면 뜻이 모호하다.
+  /// ('식음료' → '식당·카페' 가 무엇을 뜻하는지 분명하다)
+  static const _zoneLabel = {
+    '실내': '실내',
+    '식음료': '식당·카페',
+    '전시': '전시관',
+    '숙박': '숙박시설',
+    '체육': '체육시설',
+    '자연': '일부 야외구역',
+    '탈것': '탑승시설',
+  };
+
+  /// 동반 불가 구역을 한 문장으로 요약한다.
+  ///
+  /// 원문("가옥 안쪽은 동반 불가")은 그대로 함께 보여주므로 여기서는
+  /// 어느 '유형'이 막혔는지만 알려준다. 원문에 없는 내용을 지어내지 않는다.
+  static String _zoneSummaryOf(List<String> kinds) {
+    if (kinds.isEmpty) return '';
+    final labels = kinds.map((k) => _zoneLabel[k] ?? k).toList();
+    // 쉼표로 잇는다. '식당·카페' 처럼 라벨 안에 가운뎃점이 있어서,
+    // 유형 구분에도 가운뎃점을 쓰면 '전시관·식당·카페' 가 세 유형처럼 보인다.
+    final joined = labels.join(', ');
+    return '$joined${_topicParticle(joined)} 동반할 수 없습니다';
+  }
+
+  /// 받침 유무로 '은/는'을 고른다. '은(는)' 은 읽기 나쁘다.
+  static String _topicParticle(String word) {
+    if (word.isEmpty) return '는';
+    final code = word.codeUnitAt(word.length - 1);
+    // 한글 음절 영역 밖이면 안전하게 '는'
+    if (code < 0xAC00 || code > 0xD7A3) return '는';
+    return (code - 0xAC00) % 28 == 0 ? '는' : '은';
+  }
+
+  static String _zoneNoteOf(String etc) {
+    const drop = ['입마개', '배변봉투', '배변 봉투', '목줄'];
+    final lines = etc
+        .split('\n')
+        .where((l) => l.trim().isNotEmpty)
+        .where((l) => !drop.any(l.contains))
+        .toList();
+    return lines.join('\n');
+  }
+
   List<String> _buildChips(PlaceConstraint p) {
     final out = <String>[];
     if (p.acmpyType == AcmpyType.partialArea) out.add('구역 제한');
@@ -147,8 +206,12 @@ class VerdictEngine {
     if (p.fierceExcluded) out.add('맹견 제외');
     if (p.maxCount != null) out.add('최대 ${p.maxCount}마리');
     if (p.muzzleOverKg != null) out.add('${_kg(p.muzzleOverKg!)}kg↑ 입마개');
-    if (p.muzzleIfFierce) out.add('맹견 입마개');
-    if (p.extraFee) out.add('추가 요금');
+    // 이미 무조건 입마개를 요구하는 곳이면 '맹견 입마개' 칩을 붙이지 않는다.
+    // 모든 개가 써야 하는데 조건부처럼 보이면, 맹견이 아닌 보호자가
+    // 자기는 해당 없다고 오해한다.
+    if (p.muzzleIfFierce && !p.requiredItems.contains('입마개')) {
+      out.add('맹견 입마개');
+    }
     if (p.outdoorOnly) out.add('야외만');
     return out;
   }
