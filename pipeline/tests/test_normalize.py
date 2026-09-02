@@ -287,3 +287,55 @@ def test_zone_dedupes():
     # 여러 줄에서 같은 유형이 나와도 한 번만
     text = "- 실내는 동반 불가\n- 내부 시설 동반 불가"
     assert _P.extract_banned_zones(text) == ["실내"]
+
+
+# ══════════════════════════════════════════════════
+# 안내견 전용 — 기타정보에 있는 경우
+# ══════════════════════════════════════════════════
+def test_guide_dog_only_from_etc():
+    """가능동물이 비어 있고 기타정보에만 전용 표현이 있는 경우.
+
+    실측: 힐튼 가든 인 서울 강남 — '장애우 안내견만 이용가능'
+    이 케이스가 유실되어 '조건부 가능'으로 표시되고 있었다.
+    """
+    r = normalize(_rec(acmpyPsblCpam="", etcAcmpyInfo="장애우 안내견만 이용가능"))
+    assert r["guide_dog_only"] is True
+
+
+def test_guide_dog_exception_is_not_only():
+    """'안내견 제외 ~' 은 정반대 의미다. 일반견도 갈 수 있다.
+
+    이걸 전용으로 잡으면 갈 수 있는 곳이 불가로 뒤집힌다.
+    실측: 동대문디자인플라자, 동대문역사문화공원
+    """
+    r = normalize(_rec(
+        acmpyPsblCpam="전 견종 동반 가능",
+        etcAcmpyInfo="- 안내견 제외 이동장 또는 이동가방으로만 실내 동반 가능"))
+    assert r["guide_dog_only"] is False
+
+
+def test_guide_dog_only_zone_scoped_is_not_whole_place():
+    """특정 구역만 안내견 전용인 경우 장소 전체를 불가로 보지 않는다.
+
+    실측: 고성 DMZ박물관 — '전시실 내에는 안내견 이외 동반 금지'
+    일부구역 동반가능 + 전 견종 동반 가능인 곳이라, 전체를 전용으로
+    잡으면 야외를 갈 수 있는 곳이 통째로 막힌다.
+    """
+    r = normalize(_rec(acmpyTypeCd="일부구역 동반가능",
+                       acmpyPsblCpam="전 견종 동반 가능",
+                       etcAcmpyInfo="- 전시실 내에는 안내견 이외 동반 금지"))
+    assert r["guide_dog_only"] is False
+
+
+def test_guide_dog_only_exclusive_phrasing():
+    """구역 한정이 없는 '안내견 이외 출입 금지' 는 전용이다."""
+    r = normalize(_rec(acmpyPsblCpam="",
+                       etcAcmpyInfo="안내견 이외 출입 금지"))
+    assert r["guide_dog_only"] is True
+
+
+def test_guide_dog_mention_is_not_only():
+    """단순 언급은 전용이 아니다."""
+    r = normalize(_rec(acmpyPsblCpam="",
+                       etcAcmpyInfo="보조견 동반 가능, 공원 내 기차전시관 안전요원 상주"))
+    assert r["guide_dog_only"] is False

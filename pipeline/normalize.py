@@ -94,7 +94,9 @@ def normalize(rec, kor_detail=None):
         acmpy_type = "unknown_value"
 
     # ── 안내견 전용 (판정 2차, 최우선 제약) ──
-    guide_dog_only = P.find_any(cpam, P.GUIDE_DOG_ONLY)
+    # 기타정보에도 '장애우 안내견만 이용가능' 처럼 전용 표현이 온다.
+    # 실측 1건이 여기서 유실돼 '조건부 가능'으로 표시되고 있었다.
+    guide_dog_only = P.extract_guide_dog_only(cpam, etc)
 
     # ── 명시적 불가 / 문의 필요 ──
     explicitly_denied = cpam in P.NOT_ALLOWED
