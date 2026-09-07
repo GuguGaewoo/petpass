@@ -131,8 +131,17 @@ def _fetch_current_places(db):
 
 
 def _fetch_live_list(logger):
-    """전국 areaBasedList2 목록을 content_id 기준 딕셔너리로 가져온다."""
+    """전국 areaBasedList2 목록을 가져온다.
+
+    반환: (live, failed_areas)
+
+    지역 하나가 실패해도 나머지는 계속 진행한다. 다만 어느 지역이
+    실패했는지 반드시 함께 돌려준다. 실패한 지역의 장소를 '목록에서
+    사라졌다'고 오인해 비활성화하면 앱에서 통째로 없어지기 때문이다.
+    """
     live = {}
+    failed_areas = []
+
     for area in AREA_CODES:
         page = 1
         while True:
@@ -140,7 +149,12 @@ def _fetch_live_list(logger):
             if ARRANGE:
                 params["arrange"] = ARRANGE
 
-            items, total = logger.call(PET_BASE, PET_OP_AREA, **params)
+            try:
+                items, total = logger.call(PET_BASE, PET_OP_AREA, **params)
+            except Exception as e:
+                print(f"  지역 {area} 조회 실패, 건너뜀: {str(e)[:80]}")
+                failed_areas.append(area)
+                break
 
             for item in items:
                 cid = cid_of(item)
@@ -152,7 +166,7 @@ def _fetch_live_list(logger):
             page += 1
             time.sleep(SLEEP)
 
-    return live
+    return live, failed_areas
 
 
 def _list_level_patch(item, old):
@@ -207,8 +221,10 @@ def main():
     print(f"  기존 {len(current)}건")
 
     print("\n── KTO 최신 목록 조회 ──")
-    live = _fetch_live_list(logger)
+    live, failed_areas = _fetch_live_list(logger)
     print(f"  최신 {len(live)}건")
+    if failed_areas:
+        print(f"  ⚠ 조회 실패 지역: {failed_areas}")
 
     print("\n── 변경분 반영 ──")
     changed_detail = 0
@@ -232,8 +248,16 @@ def main():
         time.sleep(SLEEP)
 
     # 이번 목록에서 사라진 장소는 삭제하지 않고 비활성화만 한다.
+    #
+    # 단, 조회에 실패한 지역이 있으면 비활성화를 하지 않는다. 그 지역
+    # 장소들이 '사라진 것'으로 잡혀 통째로 앱에서 없어지기 때문이다.
+    # 갱신을 한 번 거르는 편이 데이터를 잃는 것보다 낫다.
     missing = sorted(set(current) - set(live))
-    if missing:
+    if failed_areas:
+        print(f"\n  조회 실패 지역이 있어 비활성화를 건너뜁니다 "
+              f"(대상이었던 {len(missing)}건 유지)")
+        missing = []
+    elif missing:
         db.table("places").update({"is_active": False}).in_(
             "content_id", missing
         ).execute()
@@ -243,6 +267,14 @@ def main():
         f"상세 재조회 {changed_detail}건 / "
         f"비활성화 {len(missing)}건"
     )
+
+    # 일부 지역이 실패했으면 성공으로 끝내지 않는다.
+    # Actions 에서 실패로 보여야 다음 실행 때 확인할 수 있다.
+    if failed_areas:
+        raise SystemExit(
+            f"일부 지역 조회 실패: {failed_areas} "
+            f"(나머지 {len(live)}건은 정상 반영됨)"
+        )
 
 
 if __name__ == "__main__":

@@ -119,11 +119,17 @@ def cid_of(item):
 
 
 # ── 호출 ──────────────────────────────────────────
-def call(base, op, **params):
-    """(items:list, total:int) 반환. 실패 시 RuntimeError."""
-    if not SERVICE_KEY:
-        raise RuntimeError("인증키 없음")
+# 공사 서버는 간헐적으로 접속이 지연된다. 실제로 자동 동기화가 첫 호출
+# 실패만으로 여러 번 중단됐다. 네트워크 오류에 한해 재시도한다.
+#
+# 인증키 오류나 잘못된 응답은 다시 불러도 같은 결과이므로 재시도하지
+# 않는다. 그런 것까지 재시도하면 한도만 쓰고 실패가 늦게 드러난다.
+RETRY_COUNT = 3
+RETRY_BACKOFF = 2.0    # 2초 → 4초 → 8초
 
+
+def _call_once(base, op, **params):
+    """한 번만 호출한다. 재시도는 call() 이 담당한다."""
     p = {**COMMON, "serviceKey": SERVICE_KEY, **params}
     r = requests.get(f"{base}/{op}", params=p, timeout=TIMEOUT)
     text = r.text.strip()
@@ -149,6 +155,32 @@ def call(base, op, **params):
     if isinstance(item, dict):               # 1건이면 dict 로 옴
         item = [item]
     return item, int(body.get("totalCount") or 0)
+
+
+def call(base, op, **params):
+    """(items:list, total:int) 반환. 실패 시 RuntimeError.
+
+    네트워크 오류(접속 지연·끊김)는 잠시 뒤 다시 시도한다.
+    응답을 받아냈는데 내용이 잘못된 경우(인증키 오류 등)는 다시 불러도
+    같으므로 즉시 올린다.
+    """
+    if not SERVICE_KEY:
+        raise RuntimeError("인증키 없음")
+
+    delay = RETRY_BACKOFF
+    for attempt in range(1, RETRY_COUNT + 1):
+        try:
+            return _call_once(base, op, **params)
+        except requests.exceptions.RequestException as e:
+            # 접속 자체가 안 된 경우. 마지막 시도였다면 포기한다.
+            if attempt == RETRY_COUNT:
+                raise RuntimeError(
+                    f"{op} 접속 실패 ({RETRY_COUNT}회 시도): {type(e).__name__}"
+                ) from e
+            print(f"    {op} 접속 실패, {delay:.0f}초 후 재시도 "
+                  f"({attempt}/{RETRY_COUNT})")
+            time.sleep(delay)
+            delay *= 2
 
 
 # ── 수집 ──────────────────────────────────────────
