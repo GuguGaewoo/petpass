@@ -49,7 +49,7 @@ docs/                스키마 정의, 필드 매핑, 데이터 실사 기록
           → 정규화(pipeline/normalize.py 재사용) → 판정
 
 [자동 갱신]
-  GitHub Actions (매일 04:00 KST) → 변경분만 Open API 재조회
+  GitHub Actions (매일 08:00 KST) → 변경분만 Open API 재조회
           → 정규화 → Supabase 갱신
 ```
 
@@ -145,7 +145,7 @@ flutter test
 |---|---|
 | 웹 배포 (Vercel) | `vercel.json`, `scripts/vercel_build.sh` — 절차는 `docs/배포.md` |
 | 백엔드 배포 (Render) | `render.yaml` |
-| 일일 데이터 동기화 | `.github/workflows/tourapi-sync.yml` (04:00 KST) |
+| 일일 데이터 동기화 | `.github/workflows/tourapi-sync.yml` (08:00 KST) |
 | 백엔드 keep-alive | `.github/workflows/backend-keepalive.yml` (09~20시 KST) |
 | Supabase keep-alive | `.github/workflows/keepalive.yml` (주 1회) |
 
