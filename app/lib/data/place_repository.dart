@@ -24,8 +24,11 @@ class PlaceRepository {
   static const _assetPath = 'assets/places.json';
   static const _neighborPath = 'assets/neighbors.json';
 
-  /// 화면에 표기하는 출처. 기관명을 쓰지 않는다(공모전 규정).
-  static const _sourceLabel = '공공 관광데이터';
+  /// 화면에 표기하는 출처.
+  ///
+  /// 공사가 지정한 형식이며 운영계정 승인 기준상 필수다.
+  /// TourAPI 로 표기해서는 안 된다.
+  static const _sourceLabel = 'ⓒ한국관광공사';
 
   /// 목록 조회 상한. 현재 632건이라 넉넉하다.
   /// Supabase 는 지정하지 않으면 1000건에서 잘리므로 명시해 둔다.

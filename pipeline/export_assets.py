@@ -146,10 +146,11 @@ def main():
     payload = {
         "schema_version": rows[0].get("schema_version", 2),
         "count": len(slimmed),
-        # 공모전 규정상 서비스 내에서 공사를 지칭하는 명칭을 쓸 수 없다.
-        # 이 값은 앱의 sourceLabel 로 전달되어 화면에 노출될 수 있으므로
-        # 기관명 없이 표기한다.
-        "source": "공공 관광데이터",
+        # 공사 지정 출처 표기. 운영계정 승인 기준상 필수이며,
+        # TourAPI 로 표기해서는 안 된다.
+        # 명칭 사용 제한은 '공사가 만든 서비스로 오인시키지 말 것'이라는
+        # 취지이므로, 저작권 출처 표기와는 별개다.
+        "source": "ⓒ한국관광공사",
         "places": slimmed,
     }
 
